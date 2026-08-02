@@ -1,11 +1,59 @@
+import asyncio
+import logging
+import subprocess
+import sys
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
+from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
 engine = create_async_engine(settings.database_url)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+
+alembic_config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
+project_root = Path(__file__).resolve().parents[2]
+
+
+def _database_revision_heads(connection) -> tuple[list[str], list[str]]:
+    migration_context = MigrationContext.configure(connection=connection)
+    current_heads = migration_context.get_current_heads()
+    script_heads = ScriptDirectory.from_config(alembic_config).get_heads()
+    return current_heads, script_heads
+
+
+def _run_alembic_upgrade() -> None:
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        check=True,
+        cwd=str(project_root),
+        capture_output=True,
+        text=True,
+    )
+
+
+async def _maybe_upgrade_database() -> bool:
+    async with engine.begin() as conn:
+        current_heads, script_heads = await conn.run_sync(_database_revision_heads)
+
+    if set(current_heads) == set(script_heads):
+        return False
+
+    await asyncio.to_thread(_run_alembic_upgrade)
+    return True
+
+
+async def check_migrations() -> None:
+    updated = await _maybe_upgrade_database()
+    if updated:
+        logger.info("Database migrations were applied successfully.")
+    else:
+        logger.info("Database migrations are already up-to-date.")
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

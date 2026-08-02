@@ -7,11 +7,12 @@ from app.api.router import api_router
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import register_middleware
-from app.db.session import engine
+from app.db.session import check_migrations, engine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await check_migrations()
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     yield
