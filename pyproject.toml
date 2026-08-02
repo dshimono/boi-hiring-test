@@ -12,4 +12,5 @@ dependencies = [
     "pgvector>=0.3.6",
     "pydantic-settings>=2.6",
     "alembic>=1.18.5",
+    "python-dotenv>=1.0",
 ]
