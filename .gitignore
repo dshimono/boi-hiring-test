@@ -9,4 +9,4 @@ __pycache__/
 static/ads/*
 .claude/settings.json
 .coverage
-docs/auth-implementation-plan.md
+docs/*
