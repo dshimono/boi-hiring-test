@@ -4,16 +4,28 @@ from pathlib import Path
 import structlog
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 
 from app.api.router import api_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import register_middleware
-from app.db.session import check_migrations, engine
+from app.db.session import AsyncSessionLocal, check_migrations, engine
+from app.models import Ad
 
 logger = structlog.get_logger(__name__)
+
+
+async def seed_if_empty() -> None:
+    from scripts.seed_from_source import seed
+
+    async with AsyncSessionLocal() as session:
+        existing = await session.scalar(select(func.count()).select_from(Ad))
+    if existing:
+        return
+    logger.info("database_empty_seeding")
+    await seed(force=False)
 
 
 @asynccontextmanager
@@ -22,6 +34,7 @@ async def lifespan(app: FastAPI):
     await check_migrations()
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    await seed_if_empty()
     logger.info("application_started")
     yield
     logger.info("application_stopping")

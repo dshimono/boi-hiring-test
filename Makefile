@@ -7,7 +7,7 @@ NEXT_PUBLIC_WEBSITE_URL ?= http://localhost:3000
 
 .PHONY: help install install-backend install-frontend \
 	lint lint-backend lint-frontend format typecheck-frontend \
-	test test-backend migrate migration \
+	test test-backend migrate migration seed \
 	build build-backend build-frontend \
 	up prod-up down logs ci clean
 
@@ -47,6 +47,9 @@ migrate: ## Apply database migrations
 
 migration: ## Create a new migration (usage: make migration name="add x")
 	uv run alembic revision --autogenerate -m "$(name)"
+
+seed: ## Seed the database from source/ (usage: make seed force=1 to wipe and reseed)
+	uv run python scripts/seed_from_source.py $(if $(force),--force,)
 
 build: build-backend build-frontend ## Build backend + frontend Docker images
 
