@@ -8,3 +8,4 @@ __pycache__/
 
 static/ads/*
 !static/ads/.gitkeep
+.claude/settings.json
