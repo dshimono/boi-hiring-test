@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const API_URL = process.env.API_URL ?? "http://localhost:8000";
+// Railway's edge proxy doesn't forward the public hostname to the container, so
+// request.url resolves to the container's internal bind address. Build redirects
+// from the known public origin instead.
+const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL ?? "http://localhost:3000";
 const TOKEN_COOKIE = "access_token";
 const DEFAULT_MAX_AGE = 60 * 60 * 24;
 
@@ -17,7 +21,7 @@ function expirySeconds(accessToken: string): number {
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const token = request.nextUrl.searchParams.get("token");
   if (!token) {
-    return NextResponse.redirect(new URL("/auth/verify/error?reason=missing", request.url));
+    return NextResponse.redirect(new URL("/auth/verify/error?reason=missing", WEBSITE_URL));
   }
 
   const res = await fetch(`${API_URL}/api/v1/auth/verify`, {
@@ -27,11 +31,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   });
 
   if (!res.ok) {
-    return NextResponse.redirect(new URL("/auth/verify/error", request.url));
+    return NextResponse.redirect(new URL("/auth/verify/error", WEBSITE_URL));
   }
 
   const { access_token: accessToken } = (await res.json()) as { access_token: string };
-  const response = NextResponse.redirect(new URL("/", request.url));
+  const response = NextResponse.redirect(new URL("/", WEBSITE_URL));
   response.cookies.set(TOKEN_COOKIE, accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
