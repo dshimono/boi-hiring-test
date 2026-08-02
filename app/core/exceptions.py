@@ -24,6 +24,31 @@ class UnauthorizedError(AppError):
         super().__init__(message, status_code=401)
 
 
+class InvalidTokenError(AppError):
+    def __init__(self, message: str = "Invalid or expired token."):
+        super().__init__(message, status_code=400)
+
+
+class TokenExpiredError(AppError):
+    def __init__(self, message: str = "This magic link has expired."):
+        super().__init__(message, status_code=400)
+
+
+class TokenAlreadyUsedError(AppError):
+    def __init__(self, message: str = "This magic link has already been used."):
+        super().__init__(message, status_code=400)
+
+
+class UserNotFoundError(AppError):
+    def __init__(self, message: str = "User not found."):
+        super().__init__(message, status_code=404)
+
+
+class NotAuthenticatedError(AppError):
+    def __init__(self, message: str = "Could not validate credentials."):
+        super().__init__(message, status_code=401)
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
