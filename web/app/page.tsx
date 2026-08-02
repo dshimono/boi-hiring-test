@@ -1,45 +1,11 @@
+import AdCardsGrid from "./AdCardsGrid";
+import { PLATFORM_COLORS, PLATFORM_ORDER } from "./constants";
+import { formatCompact, formatNumber, formatWeek, formatYear } from "./format";
+import type { Ad, AdDetail, Coverage, StatsOverview, WeeklySummary } from "./types";
+
 export const dynamic = "force-dynamic";
 
 const API_URL = process.env.API_URL ?? "http://localhost:8000";
-
-type Ad = {
-  ad_id: string;
-  title: string;
-  body: string | null;
-  image_url: string | null;
-};
-
-type CoverageAd = {
-  ad_id: string;
-  title: string;
-  platforms_by_week: string[][];
-};
-
-type Coverage = {
-  weeks: string[];
-  ads: CoverageAd[];
-};
-
-type WeeklySummary = {
-  weeks: string[];
-  metric: string;
-  series: Record<string, number[]>;
-};
-
-type StatsOverview = {
-  ads_count: number;
-  platforms_count: number;
-  weeks_count: number;
-  metric_rows_count: number;
-  comments_count: number;
-};
-
-const PLATFORM_ORDER = ["Google", "LinkedIn", "Meta"];
-const PLATFORM_COLORS: Record<string, string> = {
-  Google: "var(--series-google)",
-  LinkedIn: "var(--series-linkedin)",
-  Meta: "var(--series-meta)",
-};
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, { cache: "no-store" });
@@ -49,29 +15,6 @@ async function getJSON<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-function formatWeek(dateStr: string): string {
-  return new Date(`${dateStr}T00:00:00Z`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-function formatYear(dateStr: string): number {
-  return new Date(`${dateStr}T00:00:00Z`).getUTCFullYear();
-}
-
-function formatCompact(n: number): string {
-  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(n);
-}
-
-function adPlatforms(coverage: Coverage, adId: string): string[] {
-  const covAd = coverage.ads.find((a) => a.ad_id === adId);
-  if (!covAd) return [];
-  const present = new Set(covAd.platforms_by_week.flat());
-  return PLATFORM_ORDER.filter((p) => present.has(p));
-}
-
 export default async function Home() {
   const [ads, coverage, weeklySummary, stats] = await Promise.all([
     getJSON<Ad[]>("/api/v1/ads"),
@@ -79,6 +22,10 @@ export default async function Home() {
     getJSON<WeeklySummary>("/api/v1/metrics/weekly-summary"),
     getJSON<StatsOverview>("/api/v1/stats/overview"),
   ]);
+
+  const adDetails = await Promise.all(
+    ads.map((ad) => getJSON<AdDetail>(`/api/v1/ads/${ad.ad_id}`))
+  );
 
   const dateRange =
     coverage.weeks.length > 0
@@ -134,13 +81,9 @@ export default async function Home() {
         <section className="mt-20 pb-24">
           <h2 className="text-xl font-semibold tracking-tight">Campaign creatives</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            The {ads.length} ads behind the numbers above.
+            The {ads.length} ads behind the numbers above. Click a card for the full detail view.
           </p>
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {ads.map((ad) => (
-              <AdCard key={ad.ad_id} ad={ad} platforms={adPlatforms(coverage, ad.ad_id)} />
-            ))}
-          </div>
+          <AdCardsGrid ads={adDetails} />
         </section>
       </div>
     </main>
@@ -151,7 +94,7 @@ function StatTile({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-1)] p-4">
       <p className="text-xs text-[var(--text-secondary)]">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value.toLocaleString("en-US")}</p>
+      <p className="mt-1 text-2xl font-semibold">{formatNumber(value)}</p>
     </div>
   );
 }
@@ -214,44 +157,6 @@ function CoverageHeatmap({ coverage }: { coverage: Coverage }) {
         ))}
       </tbody>
     </table>
-  );
-}
-
-function AdCard({ ad, platforms }: { ad: Ad; platforms: string[] }) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-1)]">
-      {ad.image_url ? (
-        <div className="flex aspect-square w-full items-center justify-center bg-[var(--surface-2)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ad.image_url} alt={ad.title} className="h-full w-full object-contain" />
-        </div>
-      ) : (
-        <div className="flex aspect-square w-full items-center justify-center bg-[var(--surface-2)] text-xs text-[var(--text-muted)]">
-          No image
-        </div>
-      )}
-      <div className="p-4">
-        <h3 className="text-sm font-medium leading-snug">{ad.title}</h3>
-        {ad.body ? (
-          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">
-            {ad.body}
-          </p>
-        ) : null}
-        {platforms.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {platforms.map((p) => (
-              <span key={p} className="flex items-center gap-1 text-[11px] text-[var(--text-secondary)]">
-                <span
-                  className="inline-block h-1.5 w-1.5 rounded-full"
-                  style={{ background: PLATFORM_COLORS[p] }}
-                />
-                {p}
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </div>
   );
 }
 
