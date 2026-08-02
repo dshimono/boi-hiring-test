@@ -12,8 +12,13 @@ def read_root():
     return {"message": "Hello from fastapi-datallmreact!"}
 
 
-@router.get("/health")
-async def health(db: AsyncSession = Depends(get_db)):
+@router.get("/health/live")
+def health_live():
+    return {"status": "ok"}
+
+
+@router.get("/health/ready")
+async def health_ready(db: AsyncSession = Depends(get_db)):
     version = await db.scalar(
         text("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
     )
