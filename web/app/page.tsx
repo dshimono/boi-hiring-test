@@ -1,6 +1,6 @@
 import AdCardsGrid from "./AdCardsGrid";
 import { PLATFORM_COLORS, PLATFORM_ORDER } from "./constants";
-import { formatCompact, formatNumber, formatWeek, formatYear } from "./format";
+import { formatCompact, formatNumber, formatDate, formatYear } from "./format";
 import type { Ad, AdDetail, Coverage, StatsOverview, WeeklySummary } from "./types";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ export default async function Home() {
 
   const dateRange =
     coverage.weeks.length > 0
-      ? `${formatWeek(coverage.weeks[0])} – ${formatWeek(coverage.weeks[coverage.weeks.length - 1])}, ${formatYear(coverage.weeks[coverage.weeks.length - 1])}`
+      ? `${formatDate(coverage.weeks[0])} – ${formatDate(coverage.weeks[coverage.weeks.length - 1])}, ${formatYear(coverage.weeks[coverage.weeks.length - 1])}`
       : "";
 
   return (
@@ -127,7 +127,7 @@ function CoverageHeatmap({ coverage }: { coverage: Coverage }) {
           <th className="w-44 py-1 pr-2 text-left font-medium text-[var(--text-secondary)]">Ad</th>
           {coverage.weeks.map((w) => (
             <th key={w} className="px-0.5 py-1 font-medium text-[var(--text-secondary)]">
-              {formatWeek(w)}
+              {formatDate(w)}
             </th>
           ))}
         </tr>
@@ -251,7 +251,7 @@ function LineChart({ weeks, series }: { weeks: string[]; series: Record<string, 
             fontSize={10}
             fill="var(--text-muted)"
           >
-            {formatWeek(w)}
+            {formatDate(w)}
           </text>
         ))}
         {seriesNames.map((name) => {

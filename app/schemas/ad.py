@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel
 
 
@@ -16,6 +18,12 @@ class PlatformMetrics(BaseModel):
     ctr: float
 
 
+class CommentOut(BaseModel):
+    date: date
+    platform: str
+    comment: str
+
+
 class AdDetail(BaseModel):
     ad_id: str
     title: str
@@ -27,4 +35,4 @@ class AdDetail(BaseModel):
     ctr: float
     engagement_rate: float
     platforms: list[PlatformMetrics]
-    comments: list[str]
+    comments: list[CommentOut]

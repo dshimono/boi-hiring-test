@@ -13,6 +13,12 @@ export type PlatformMetrics = {
   ctr: number;
 };
 
+export type Comment = {
+  date: string;
+  platform: string;
+  comment: string;
+};
+
 export type AdDetail = {
   ad_id: string;
   title: string;
@@ -24,7 +30,7 @@ export type AdDetail = {
   ctr: number;
   engagement_rate: number;
   platforms: PlatformMetrics[];
-  comments: string[];
+  comments: Comment[];
 };
 
 export type CoverageAd = {

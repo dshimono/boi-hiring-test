@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
 from app.core.exceptions import NotFoundError
 from app.models import Ad, AdComment, AdMetric
-from app.schemas.ad import AdDetail, AdOut, PlatformMetrics
+from app.schemas.ad import AdDetail, AdOut, CommentOut, PlatformMetrics
 
 router = APIRouter(prefix="/ads", tags=["ads"])
 
@@ -61,9 +61,14 @@ async def get_ad_detail(ad_id: str, db: AsyncSession = Depends(get_db)) -> AdDet
     )
 
     comments_result = await db.execute(
-        select(AdComment.comment).where(AdComment.ad_id == ad_id).order_by(AdComment.date.desc())
+        select(AdComment.date, AdComment.platform, AdComment.comment)
+        .where(AdComment.ad_id == ad_id)
+        .order_by(AdComment.date.desc())
     )
-    comments = list(comments_result.scalars().all())
+    comments = [
+        CommentOut(date=comment_date, platform=platform.value, comment=comment)
+        for comment_date, platform, comment in comments_result.all()
+    ]
 
     total_impressions = sum(p.impressions for p in platforms)
     total_clicks = sum(p.clicks for p in platforms)

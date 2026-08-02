@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PLATFORM_COLORS } from "./constants";
-import { formatNumber } from "./format";
+import { formatDate, formatNumber } from "./format";
 import type { AdDetail } from "./types";
 
 export default function AdCardsGrid({ ads }: { ads: AdDetail[] }) {
@@ -36,7 +36,7 @@ export default function AdCardsGrid({ ads }: { ads: AdDetail[] }) {
                   {ad.body}
                 </p>
               ) : null}
-              <div className="mt-3 flex gap-4 text-xs text-[var(--text-secondary)]">
+              <div className="mt-3 flex items-center gap-4 text-xs text-[var(--text-secondary)]">
                 <span>
                   Impressions{" "}
                   <b className="font-semibold text-[var(--text-primary)]">{formatNumber(ad.impressions)}</b>
@@ -44,8 +44,23 @@ export default function AdCardsGrid({ ads }: { ads: AdDetail[] }) {
                 <span>
                   CTR <b className="font-semibold text-[var(--text-primary)]">{ad.ctr}%</b>
                 </span>
+                {ad.platforms.length > 0 ? (
+                  <span className="flex items-center gap-1">
+                    {ad.platforms.map((p) => (
+                      <span
+                        key={p.platform}
+                        title={p.platform}
+                        className="inline-block h-2 w-2 rounded-full"
+                        style={{ background: PLATFORM_COLORS[p.platform] }}
+                      />
+                    ))}
+                  </span>
+                ) : null}
               </div>
-              <span className="mt-3 flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
+              <span
+                className="mt-3 flex items-center gap-1 text-xs font-medium group-hover:underline"
+                style={{ color: "var(--series-google)" }}
+              >
                 See details
                 <span className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
               </span>
@@ -170,8 +185,24 @@ function AdModal({ ad, onClose }: { ad: AdDetail; onClose: () => void }) {
           {ad.comments.length > 0 ? (
             <div className="flex max-h-48 flex-col gap-2 overflow-y-auto">
               {ad.comments.map((c, i) => (
-                <div key={i} className="rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm">
-                  {c}
+                <div
+                  key={i}
+                  className="flex items-start justify-between gap-3 rounded-lg bg-[var(--surface-2)] px-3 py-2 text-sm"
+                >
+                  <span className="flex items-start gap-2">
+                    <span
+                      title={c.platform}
+                      className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: PLATFORM_COLORS[c.platform] }}
+                    />
+                    <span>{c.comment}</span>
+                  </span>
+                  <span
+                    className="shrink-0 text-xs text-[var(--text-muted)]"
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {formatDate(c.date)}
+                  </span>
                 </div>
               ))}
             </div>
