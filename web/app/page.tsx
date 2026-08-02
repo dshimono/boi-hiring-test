@@ -1,4 +1,7 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import AdCardsGrid from "./AdCardsGrid";
+import Header from "./Header";
 import { PLATFORM_COLORS, PLATFORM_ORDER } from "./constants";
 import { formatCompact, formatNumber, formatDate, formatYear } from "./format";
 import type { Ad, AdDetail, Coverage, StatsOverview, WeeklySummary } from "./types";
@@ -7,8 +10,14 @@ export const dynamic = "force-dynamic";
 
 const API_URL = process.env.API_URL ?? "http://localhost:8000";
 
-async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { cache: "no-store" });
+async function getJSON<T>(path: string, token: string | undefined): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    cache: "no-store",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (res.status === 401) {
+    redirect("/sign-in");
+  }
   if (!res.ok) {
     throw new Error(`Request to ${path} failed with ${res.status}`);
   }
@@ -16,15 +25,17 @@ async function getJSON<T>(path: string): Promise<T> {
 }
 
 export default async function Home() {
+  const token = cookies().get("access_token")?.value;
+
   const [ads, coverage, weeklySummary, stats] = await Promise.all([
-    getJSON<Ad[]>("/api/v1/ads"),
-    getJSON<Coverage>("/api/v1/metrics/coverage"),
-    getJSON<WeeklySummary>("/api/v1/metrics/weekly-summary"),
-    getJSON<StatsOverview>("/api/v1/stats/overview"),
+    getJSON<Ad[]>("/api/v1/ads", token),
+    getJSON<Coverage>("/api/v1/metrics/coverage", token),
+    getJSON<WeeklySummary>("/api/v1/metrics/weekly-summary", token),
+    getJSON<StatsOverview>("/api/v1/stats/overview", token),
   ]);
 
   const adDetails = await Promise.all(
-    ads.map((ad) => getJSON<AdDetail>(`/api/v1/ads/${ad.ad_id}`))
+    ads.map((ad) => getJSON<AdDetail>(`/api/v1/ads/${ad.ad_id}`, token))
   );
 
   const dateRange =
@@ -34,6 +45,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[var(--surface-page)] text-[var(--text-primary)]">
+      <Header />
       <div className="mx-auto max-w-5xl px-6 py-16 sm:px-8 sm:py-24">
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-muted)]">
           Board of Innovation &middot; Ad performance
