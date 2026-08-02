@@ -3,6 +3,10 @@ import sys
 
 import structlog
 
+from app.core.config import settings
+
+_UVICORN_LOGGERS = ("uvicorn", "uvicorn.error")
+
 
 def configure_logging() -> None:
     shared_processors = [
@@ -10,6 +14,8 @@ def configure_logging() -> None:
         structlog.stdlib.add_logger_name,
         structlog.stdlib.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
     ]
 
     structlog.configure(
@@ -19,10 +25,15 @@ def configure_logging() -> None:
         cache_logger_on_first_use=True,
     )
 
+    renderer = (
+        structlog.processors.JSONRenderer()
+        if settings.environment == "production"
+        else structlog.dev.ConsoleRenderer()
+    )
     formatter = structlog.stdlib.ProcessorFormatter(
         processors=[
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-            structlog.dev.ConsoleRenderer(),
+            renderer,
         ],
         foreign_pre_chain=shared_processors,
     )
@@ -32,4 +43,17 @@ def configure_logging() -> None:
 
     root_logger = logging.getLogger()
     root_logger.handlers = [handler]
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(settings.log_level)
+
+    # uvicorn ships its own handlers/formatters; strip them so every log line
+    # (app, sqlalchemy, alembic, uvicorn) flows through the single formatter above.
+    for name in _UVICORN_LOGGERS:
+        uvicorn_logger = logging.getLogger(name)
+        uvicorn_logger.handlers = []
+        uvicorn_logger.propagate = True
+
+    # Access logs are emitted by our own request-logging middleware instead,
+    # with structured fields (method, path, status_code, duration_ms).
+    access_logger = logging.getLogger("uvicorn.access")
+    access_logger.handlers = []
+    access_logger.propagate = False

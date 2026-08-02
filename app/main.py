@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import structlog
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
@@ -12,13 +13,18 @@ from app.core.logging import configure_logging
 from app.core.middleware import register_middleware
 from app.db.session import check_migrations, engine
 
+logger = structlog.get_logger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("application_starting", environment=settings.environment)
     await check_migrations()
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    logger.info("application_started")
     yield
+    logger.info("application_stopping")
     await engine.dispose()
 
 

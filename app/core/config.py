@@ -8,6 +8,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@db:5432/db"
     static_dir: str = "static/ads"
+    environment: str = "development"
+    log_level: str = "INFO"
 
 
 @lru_cache
