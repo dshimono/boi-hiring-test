@@ -37,9 +37,7 @@ class AdMetric(Base):
         UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
     )
     date: Mapped[date_type] = mapped_column(Date, nullable=False)
-    ad_id: Mapped[str] = mapped_column(
-        ForeignKey("ads.ad_id", ondelete="RESTRICT"), nullable=False
-    )
+    ad_id: Mapped[str] = mapped_column(ForeignKey("ads.ad_id", ondelete="RESTRICT"), nullable=False)
     platform: Mapped[AdPlatform] = mapped_column(ad_platform_enum, nullable=False)
     impressions: Mapped[int] = mapped_column(Integer, nullable=False)
     clicks: Mapped[int] = mapped_column(Integer, nullable=False)

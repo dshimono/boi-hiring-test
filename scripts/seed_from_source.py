@@ -27,6 +27,7 @@ from sqlalchemy import func, select, text  # noqa: E402
 from app.core.config import settings  # noqa: E402
 from app.db.session import AsyncSessionLocal  # noqa: E402
 from app.models import Ad, AdComment, AdMetric, AdPlatform  # noqa: E402
+
 SOURCE_DIR = PROJECT_ROOT / "source"
 STATIC_DIR = PROJECT_ROOT / settings.static_dir
 

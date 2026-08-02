@@ -22,17 +22,13 @@ async def get_coverage(db: AsyncSession = Depends(get_db)) -> CoverageResponse:
     ads_result = await db.execute(select(Ad.ad_id, Ad.title).order_by(Ad.title))
     ads = ads_result.all()
 
-    metrics_result = await db.execute(
-        select(AdMetric.ad_id, AdMetric.date, AdMetric.platform)
-    )
+    metrics_result = await db.execute(select(AdMetric.ad_id, AdMetric.date, AdMetric.platform))
     metric_rows = metrics_result.all()
 
     weeks = sorted({row.date for row in metric_rows})
     week_index = {week: i for i, week in enumerate(weeks)}
 
-    coverage: dict[str, list[set[AdPlatform]]] = {
-        ad_id: [set() for _ in weeks] for ad_id, _ in ads
-    }
+    coverage: dict[str, list[set[AdPlatform]]] = {ad_id: [set() for _ in weeks] for ad_id, _ in ads}
     for ad_id, metric_date, platform in metric_rows:
         if ad_id in coverage:
             coverage[ad_id][week_index[metric_date]].add(platform)

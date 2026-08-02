@@ -19,7 +19,5 @@ def health_live():
 
 @router.get("/health/ready")
 async def health_ready(db: AsyncSession = Depends(get_db)):
-    version = await db.scalar(
-        text("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
-    )
+    version = await db.scalar(text("SELECT extversion FROM pg_extension WHERE extname = 'vector'"))
     return {"status": "ok", "pgvector_version": version}

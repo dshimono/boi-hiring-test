@@ -4,11 +4,11 @@ import sys
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
+import structlog
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-import structlog
 
 from app.core.config import settings
 
@@ -64,6 +64,6 @@ async def check_migrations() -> None:
         logger.info("Database migrations are already up-to-date.")
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_db() -> AsyncGenerator[AsyncSession]:
     async with AsyncSessionLocal() as session:
         yield session

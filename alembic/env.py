@@ -23,8 +23,8 @@ if database_url := os.getenv("DATABASE_URL"):
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-from app.db.base import Base  # noqa: E402
 from app import models  # noqa: E402,F401
+from app.db.base import Base  # noqa: E402
 
 target_metadata = Base.metadata
 
