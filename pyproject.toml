@@ -13,4 +13,5 @@ dependencies = [
     "pydantic-settings>=2.6",
     "alembic>=1.18.5",
     "python-dotenv>=1.0",
+    "structlog>=26.1.0",
 ]
