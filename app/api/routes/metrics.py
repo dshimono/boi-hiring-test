@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.models import Ad, AdMetric, AdPlatform
 from app.schemas.metrics import AdCoverage, CoverageResponse, WeeklySummaryResponse
 
-router = APIRouter(prefix="/metrics", tags=["metrics"])
+router = APIRouter(prefix="/metrics", tags=["metrics"], dependencies=[Depends(get_current_user)])
 
 _METRIC_COLUMNS = {
     "impressions": AdMetric.impressions,
