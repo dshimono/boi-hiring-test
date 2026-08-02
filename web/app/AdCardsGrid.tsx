@@ -5,8 +5,6 @@ import { PLATFORM_COLORS } from "./constants";
 import { formatDate, formatNumber } from "./format";
 import type { AdDetail } from "./types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
 export default function AdCardsGrid({ ads }: { ads: AdDetail[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const openAd = ads.find((a) => a.ad_id === openId) ?? null;
@@ -80,7 +78,7 @@ function AdThumb({ ad }: { ad: AdDetail }) {
   return ad.image_url ? (
     <div className="flex aspect-square w-full items-center justify-center bg-[var(--surface-2)]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`${API_URL}${ad.image_url}`} alt={ad.title} className="h-full w-full object-contain" />
+      <img src={ad.image_url} alt={ad.title} className="h-full w-full object-contain" />
     </div>
   ) : (
     <div className="flex aspect-square w-full items-center justify-center bg-[var(--surface-2)] text-xs text-[var(--text-muted)]">
@@ -101,7 +99,7 @@ function AdModal({ ad, onClose }: { ad: AdDetail; onClose: () => void }) {
         <div className="relative flex aspect-[16/9] w-full items-center justify-center bg-[var(--surface-2)]">
           {ad.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={`${API_URL}${ad.image_url}`} alt={ad.title} className="h-full w-full object-contain" />
+            <img src={ad.image_url} alt={ad.title} className="h-full w-full object-contain" />
           ) : null}
           <button
             type="button"
