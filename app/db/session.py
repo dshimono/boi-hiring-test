@@ -13,7 +13,15 @@ import structlog
 from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
-engine = create_async_engine(settings.database_url)
+engine = create_async_engine(
+    settings.database_url,
+    pool_recycle=settings.db_pool_recycle_seconds,
+    pool_pre_ping=True,
+    connect_args={
+        "timeout": settings.db_connect_timeout_seconds,
+        "command_timeout": settings.db_statement_timeout_ms / 1000,
+    },
+)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 alembic_config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
