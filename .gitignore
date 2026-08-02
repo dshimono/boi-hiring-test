@@ -5,3 +5,6 @@ __pycache__/
 .env
 
 .vscode/*
+
+static/ads/*
+!static/ads/.gitkeep
