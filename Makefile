@@ -4,6 +4,7 @@ WEB_DIR := web
 IMAGE_API := fastapi-datallmreact-api
 IMAGE_WEB := fastapi-datallmreact-web
 NEXT_PUBLIC_WEBSITE_URL ?= http://localhost:3000
+NEXT_PUBLIC_API_URL ?= http://localhost:8000
 
 .PHONY: help install install-backend install-frontend \
 	lint lint-backend lint-frontend format typecheck-frontend \
@@ -57,7 +58,9 @@ build-backend: ## Build backend Docker image
 	docker build -t $(IMAGE_API) .
 
 build-frontend: ## Build frontend Docker image
-	docker build -t $(IMAGE_WEB) $(WEB_DIR) --build-arg NEXT_PUBLIC_WEBSITE_URL=$(NEXT_PUBLIC_WEBSITE_URL)
+	docker build -t $(IMAGE_WEB) $(WEB_DIR) \
+		--build-arg NEXT_PUBLIC_WEBSITE_URL=$(NEXT_PUBLIC_WEBSITE_URL) \
+		--build-arg NEXT_PUBLIC_API_URL=$(NEXT_PUBLIC_API_URL)
 
 up: ## Start local dev stack with live sync (docker compose watch)
 	docker compose watch
