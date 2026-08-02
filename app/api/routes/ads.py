@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_current_user, get_db
 from app.core.exceptions import NotFoundError
 from app.models import Ad, AdComment, AdMetric
 from app.schemas.ad import AdDetail, AdOut, CommentOut, PlatformMetrics
 
-router = APIRouter(prefix="/ads", tags=["ads"])
+router = APIRouter(prefix="/ads", tags=["ads"], dependencies=[Depends(get_current_user)])
 
 
 def _ctr(clicks: int, impressions: int) -> float:

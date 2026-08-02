@@ -67,6 +67,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/db
+      SECRET_KEY: ci-test-secret-key-at-least-32-bytes-long
       ENVIRONMENT: ci
 
     steps:

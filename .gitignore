@@ -10,3 +10,4 @@ static/ads/*
 .claude/settings.json
 .coverage
 docs/*
+.claude/*

@@ -1,7 +1,8 @@
+import uuid
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import field_validator
+from pydantic import EmailStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -25,6 +26,20 @@ class Settings(BaseSettings):
 
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
 
+    secret_key: str
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24
+    magic_link_expire_minutes: int = 15
+
+    # Kill switch: when False, all requests are treated as auth_bypass_user_id.
+    auth_enabled: bool = True
+    auth_bypass_user_id: uuid.UUID | None = None
+
+    resend_api_key: str = ""
+    resend_timeout_seconds: int = 5
+    email_from: EmailStr = "noreply@example.com"
+    frontend_url: str = "http://localhost:3000"
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors_origins(cls, v: str | list[str]) -> list[str]:
@@ -32,6 +47,13 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
+
+    @model_validator(mode="after")
+    def _require_bypass_user_when_auth_disabled(self) -> "Settings":
+        """Fail fast rather than silently letting every request through as no one."""
+        if not self.auth_enabled and self.auth_bypass_user_id is None:
+            raise ValueError("AUTH_BYPASS_USER_ID is required when AUTH_ENABLED is False")
+        return self
 
 
 @lru_cache
