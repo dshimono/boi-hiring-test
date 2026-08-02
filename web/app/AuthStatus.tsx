@@ -1,26 +1,20 @@
-"use client";
+import { cookies } from "next/headers";
 
-import { useEffect, useState } from "react";
-import { clearToken, fetchCurrentUser, getStoredToken } from "./auth";
+const API_URL = process.env.API_URL ?? "http://localhost:8000";
 
-export default function AuthStatus() {
-  const [email, setEmail] = useState<string | null>(null);
-  const [checked, setChecked] = useState(false);
+async function getCurrentUserEmail(token: string): Promise<string | null> {
+  const res = await fetch(`${API_URL}/api/v1/users/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const user = (await res.json()) as { email: string };
+  return user.email;
+}
 
-  useEffect(() => {
-    const token = getStoredToken();
-    if (!token) {
-      setChecked(true);
-      return;
-    }
-    fetchCurrentUser(token).then((user) => {
-      if (!user) clearToken();
-      setEmail(user?.email ?? null);
-      setChecked(true);
-    });
-  }, []);
-
-  if (!checked) return null;
+export default async function AuthStatus() {
+  const token = cookies().get("access_token")?.value;
+  const email = token ? await getCurrentUserEmail(token) : null;
 
   if (!email) {
     return (
@@ -33,16 +27,11 @@ export default function AuthStatus() {
   return (
     <div className="flex items-center gap-3 text-sm text-[var(--text-secondary)]">
       <span>{email}</span>
-      <button
-        type="button"
-        onClick={() => {
-          clearToken();
-          window.location.href = "/sign-in";
-        }}
-        className="font-medium text-[var(--series-google)] hover:underline"
-      >
-        Sign out
-      </button>
+      <form action="/auth/sign-out" method="post">
+        <button type="submit" className="font-medium text-[var(--series-google)] hover:underline">
+          Sign out
+        </button>
+      </form>
     </div>
   );
 }
