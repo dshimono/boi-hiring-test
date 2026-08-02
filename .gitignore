@@ -7,5 +7,4 @@ __pycache__/
 .vscode/*
 
 static/ads/*
-!static/ads/.gitkeep
 .claude/settings.json
