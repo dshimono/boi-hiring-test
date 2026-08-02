@@ -117,3 +117,4 @@ def downgrade() -> None:
     op.drop_table("ad_comments")
     op.drop_table("ads")
     # ### end Alembic commands ###
+    postgresql.ENUM(name="ad_platform").drop(op.get_bind(), checkfirst=True)
