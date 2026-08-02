@@ -36,5 +36,18 @@ services:
         - action: rebuild
           path: pyproject.toml
 
+  web:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_WEBSITE_URL: ${NEXT_PUBLIC_WEBSITE_URL:-http://localhost:3000}
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      - api
+
 volumes:
   pgdata:
