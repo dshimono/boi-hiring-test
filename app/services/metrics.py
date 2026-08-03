@@ -23,6 +23,14 @@ _METRIC_EXPRESSIONS: dict[Metric, Callable[[Subquery], object]] = {
 }
 
 
+async def get_dataset_date_range(
+    session: AsyncSession,
+) -> tuple[date_type | None, date_type | None]:
+    """The earliest and latest dates with any recorded metrics, or (None, None) if empty."""
+    result = await session.execute(select(func.min(AdMetric.date), func.max(AdMetric.date)))
+    return result.one()
+
+
 async def rank_ads(
     session: AsyncSession,
     metric: Metric = "ctr",
@@ -36,8 +44,7 @@ async def rank_ads(
     Returns the resolved query context alongside the ranked ads, so a caller
     (e.g. the chat tool) can state exactly what was queried.
     """
-    dataset_bounds = await session.execute(select(func.min(AdMetric.date), func.max(AdMetric.date)))
-    min_date, max_date = dataset_bounds.one()
+    min_date, max_date = await get_dataset_date_range(session)
 
     resolved_start = start_date or min_date
     resolved_end = end_date or max_date
