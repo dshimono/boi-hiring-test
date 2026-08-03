@@ -9,6 +9,7 @@ _UVICORN_LOGGERS = ("uvicorn", "uvicorn.error")
 
 
 def configure_logging() -> None:
+    """Route app, sqlalchemy, alembic, and uvicorn logs through one structlog-formatted handler."""
     shared_processors = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_logger_name,

@@ -42,6 +42,16 @@ def load_ads() -> list[dict]:
         return list(csv.DictReader(f, delimiter=";"))
 
 
+def load_creative_text() -> dict[str, dict]:
+    """Text extracted from the ad images (OCR + vision description), keyed by ad_id.
+
+    Generated once by scripts/extract_creative_text.py and committed, so seeding
+    needs no OCR tooling or API key.
+    """
+    with (SOURCE_DIR / "creative_text.csv").open(newline="", encoding="utf-8") as f:
+        return {row["ad_id"]: row for row in csv.DictReader(f)}
+
+
 def load_comments() -> list[dict]:
     with (SOURCE_DIR / "comments.csv").open(newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
@@ -83,6 +93,7 @@ async def seed(force: bool) -> None:
         await reset_tables()
 
     ad_rows = load_ads()
+    creative_text = load_creative_text()
     comment_rows = load_comments()
     metric_rows = load_metrics()
 
@@ -93,6 +104,7 @@ async def seed(force: bool) -> None:
             ad_id = uuid.uuid4()
             ad_id_by_business_key[row["ad_id"]] = ad_id
             path = copy_ad_image(ad_id, row["title"], row["image"])
+            creative = creative_text.get(row["ad_id"], {})
             session.add(
                 Ad(
                     id=ad_id,
@@ -101,6 +113,10 @@ async def seed(force: bool) -> None:
                     body=row["body"] or None,
                     image=row["image"],
                     path=path,
+                    ocr_headline=creative.get("ocr_headline") or None,
+                    ocr_body=creative.get("ocr_body") or None,
+                    ocr_cta=creative.get("ocr_cta") or None,
+                    vision_description=creative.get("vision_description") or None,
                 )
             )
         await session.flush()

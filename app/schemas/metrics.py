@@ -18,3 +18,19 @@ class WeeklySummaryResponse(BaseModel):
     weeks: list[date]
     metric: str
     series: dict[str, list[int]]
+
+
+class RankedAd(BaseModel):
+    ad_id: str
+    title: str
+    value: float
+    impressions: int
+    clicks: int
+    engagements: int
+
+
+class RankAdsResponse(BaseModel):
+    metric: str
+    period: str | None
+    ad_id_filter: str | None
+    ads: list[RankedAd]

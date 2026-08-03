@@ -17,9 +17,11 @@ Without a `RESEND_API_KEY`, magic links are logged instead of emailed — useful
 
 ### How it works
 
-1. `POST /api/v1/auth/magic-link` — client submits an email. If no user exists for that email, one is created. A single-use token is generated, hashed, stored with a `MAGIC_LINK_EXPIRE_MINUTES`-minute expiry, and emailed as a sign-in link (or logged, if `RESEND_API_KEY` isn't set).
+1. `POST /api/v1/auth/magic-link` — client submits an email. If no user exists for that email, one is created. A single-use token is generated, hashed, stored with a `MAGIC_LINK_EXPIRE_MINUTES`-minute expiry, and the sign-in email is queued via a FastAPI `BackgroundTask` (or logged, if `RESEND_API_KEY` isn't set) so the response doesn't wait on Resend.
 2. `POST /api/v1/auth/verify` — client submits the raw token from the link. If it's valid, unused, and unexpired, the user is marked verified and a JWT access token is returned.
 3. `GET /api/v1/users/me` and the other data routes (`/api/v1/ads`, `/api/v1/metrics/*`, `/api/v1/stats/*`) are protected; they require `Authorization: Bearer <access_token>`.
+
+`BackgroundTask` runs in-process after the response is sent — no extra infrastructure, but a failed send is only logged (not retried) and a crash mid-task drops the email. That's an acceptable trade at current volume; if magic-link email needs retries, delivery guarantees, or to survive a process restart, graduate to a real queue (e.g. Celery/RQ backed by Redis) instead of leaning harder on `BackgroundTask`.
 
 ### Security properties
 
@@ -62,3 +64,28 @@ make test
 ```
 
 Each test runs inside a transaction (or an in-memory SQLite session for `tests/unit`) that's rolled back afterwards, so nothing persists between runs. No test sends real email; tests marked `@pytest.mark.real_email` are skipped unless `RESEND_API_KEY` is set.
+
+## Chat with your data
+
+Ask natural-language questions about ad performance; answers come from a typed tool call (`get_ad_performance`) into the same `services/metrics.rank_ads()` function the dashboard's own metrics use, never from the model's own knowledge. The tool-calling loop (`app/ai/chat_service.py`) sends the system prompt, conversation history, and the user's question to the LLM, executes any tool calls it requests, and feeds the JSON results back until it returns a final answer or a 5-iteration cap is hit. If a question needs data the tool can't provide (e.g. ad comments or creative copy), the model is instructed to say so rather than estimate.
+
+**Demo question:** *"Which ad has the best engagement rate, and how many times higher is that than the ad with the worst engagement rate?"* — grounds an actual insight ("Dynamic Synthetic Personas" at ~3.2% is ~3.7x "From Chaos to Clarity" at ~0.85%) and shows the model reasoning over a full ranked tool result rather than a single lookup.
+
+### Provider swap
+
+`app/ai/llm/client.py` is the only file that imports the OpenAI SDK; everything else in `app/ai/` depends only on the neutral `Message`/`ToolCall`/`ToolDef`/`LLMResponse` types and the `LLMClient` protocol. Adding a second provider is one new class in `client.py` plus one `LLM_PROVIDER` env var value — no changes anywhere else.
+
+### Environment variables
+
+| Variable | Default | Notes |
+|---|---|---|
+| `LLM_PROVIDER` | `openai` | Selects the client in `get_llm_client()`; unknown values raise at startup |
+| `LLM_MODEL` | `gpt-4o-mini` | Model name, passed straight through to the provider |
+| `LLM_MAX_TOKENS` | `1000` | Response token cap |
+| `LLM_TIMEOUT_S` | `30` | Provider request timeout, in seconds |
+| `OPENAI_API_KEY` | *(empty)* | Required to actually call the API; the app still boots without it |
+
+### Next features
+
+- `search_comments` over `ad_comments`, via embeddings, once the dataset outgrows prompt-stuffing.
+- A second provider `case` branch in `get_llm_client()` (e.g. Gemini) — no stub exists today by design.

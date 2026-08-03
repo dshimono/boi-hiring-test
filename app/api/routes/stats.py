@@ -11,6 +11,7 @@ router = APIRouter(prefix="/stats", tags=["stats"], dependencies=[Depends(get_cu
 
 @router.get("/overview", response_model=StatsOverview)
 async def get_stats_overview(db: AsyncSession = Depends(get_db)) -> StatsOverview:
+    """Dataset-wide counts (ads, platforms, weeks, metric rows, comments) for the dashboard."""
     ads_count = await db.scalar(select(func.count()).select_from(Ad))
     weeks_count = await db.scalar(select(func.count(func.distinct(AdMetric.date))))
     metric_rows_count = await db.scalar(select(func.count()).select_from(AdMetric))

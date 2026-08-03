@@ -11,6 +11,8 @@ from app.models.enums import AdPlatform, ad_platform_enum
 
 
 class AdComment(Base):
+    """A platform comment left on an ad on a given date."""
+
     __tablename__ = "ad_comments"
     __table_args__ = (
         Index("idx_ad_comments_ad_id", "ad_id"),

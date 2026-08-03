@@ -9,6 +9,8 @@ from app.db.base import Base
 
 
 class Ad(Base):
+    """A single ad creative (title, body, image) tracked across platforms."""
+
     __tablename__ = "ads"
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -19,6 +21,10 @@ class Ad(Base):
     body: Mapped[str | None] = mapped_column(Text)
     image: Mapped[str | None] = mapped_column(Text)
     path: Mapped[str | None] = mapped_column(Text)
+    ocr_headline: Mapped[str | None] = mapped_column(Text)
+    ocr_body: Mapped[str | None] = mapped_column(Text)
+    ocr_cta: Mapped[str | None] = mapped_column(Text)
+    vision_description: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )

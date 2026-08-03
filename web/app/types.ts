@@ -50,6 +50,22 @@ export type WeeklySummary = {
   series: Record<string, number[]>;
 };
 
+export type RankedAd = {
+  ad_id: string;
+  title: string;
+  value: number;
+  impressions: number;
+  clicks: number;
+  engagements: number;
+};
+
+export type RankAdsResponse = {
+  metric: string;
+  period: string | null;
+  ad_id_filter: string | null;
+  ads: RankedAd[];
+};
+
 export type StatsOverview = {
   ads_count: number;
   platforms_count: number;

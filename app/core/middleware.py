@@ -14,6 +14,8 @@ logger = structlog.get_logger(__name__)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    """Binds a request id to log context and logs method/path/status/duration for every request."""
+
     async def dispatch(self, request: Request, call_next) -> Response:
         request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
         structlog.contextvars.clear_contextvars()
@@ -42,6 +44,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 def register_middleware(app: FastAPI) -> None:
+    """Attach request-id/logging middleware and CORS to the app."""
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(
         CORSMiddleware,

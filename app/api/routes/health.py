@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.get("/")
 def read_root():
-    return {"message": "Hello from fastapi-datallmreact!"}
+    return {"message": "Hello, server is up!"}
 
 
 @router.get("/health/live")
@@ -19,5 +19,6 @@ def health_live():
 
 @router.get("/health/ready")
 async def health_ready(db: AsyncSession = Depends(get_db)):
+    """Readiness probe: confirms the DB is reachable and pgvector is provisioned."""
     version = await db.scalar(text("SELECT extversion FROM pg_extension WHERE extname = 'vector'"))
     return {"status": "ok", "pgvector_version": version}
