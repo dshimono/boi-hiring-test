@@ -87,6 +87,22 @@ async def test_chat_route_rejects_too_much_history(authed_client: AsyncClient) -
 
 
 @pytest.mark.asyncio
+async def test_chat_route_accepts_long_assistant_answer_in_history(
+    authed_client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A prior streamed assistant answer can run well past 1000 chars; sending
+    it back as history (as the frontend does) must not 422."""
+    monkeypatch.setattr("app.api.routes.chat.ChatService", _FakeChatService)
+    history = [{"role": "assistant", "content": "x" * 3000}]
+
+    response = await authed_client.post(
+        "/api/v1/chat", json={"message": "follow up", "history": history}
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_chat_route_provider_failure_emits_error_event(
     authed_client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
