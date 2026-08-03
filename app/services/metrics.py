@@ -1,3 +1,5 @@
+"""Aggregation queries backing the metrics/stats endpoints and the chat tool."""
+
 from collections.abc import Callable
 from datetime import date as date_type
 from typing import Literal
@@ -116,6 +118,7 @@ async def rank_ads(
 
 
 async def get_coverage(session: AsyncSession) -> CoverageResponse:
+    """Which platforms reported data for each ad in each week of the dataset."""
     ads_result = await session.execute(select(Ad.ad_id, Ad.title).order_by(Ad.title))
     ads = ads_result.all()
 
@@ -147,6 +150,7 @@ async def get_coverage(session: AsyncSession) -> CoverageResponse:
 
 
 async def get_weekly_summary(session: AsyncSession, metric: str) -> WeeklySummaryResponse:
+    """Per-platform weekly totals for a single metric, aligned to the dataset's date range."""
     column = _METRIC_COLUMNS[metric]
     result = await session.execute(
         select(AdMetric.date, AdMetric.platform, func.sum(column))

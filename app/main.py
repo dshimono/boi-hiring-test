@@ -18,6 +18,7 @@ logger = structlog.get_logger(__name__)
 
 
 async def seed_if_empty() -> None:
+    """Load source/*.csv into the ads tables on first boot, if the ads table is empty."""
     from scripts.seed_from_source import seed
 
     async with AsyncSessionLocal() as session:
@@ -30,6 +31,7 @@ async def seed_if_empty() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Startup: migrate, provision pgvector, seed if empty. Shutdown: dispose the engine."""
     logger.info("application_starting", environment=settings.environment)
     await check_migrations()
     async with engine.begin() as conn:
@@ -42,6 +44,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    """Build the FastAPI app: logging, middleware, exception handlers, routes, static ad images."""
     configure_logging()
     app = FastAPI(lifespan=lifespan)
     register_middleware(app)

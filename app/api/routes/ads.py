@@ -12,6 +12,7 @@ router = APIRouter(prefix="/ads", tags=["ads"], dependencies=[Depends(get_curren
 
 @router.get("", response_model=list[AdOut])
 async def list_ads(db: AsyncSession = Depends(get_db)) -> list[AdOut]:
+    """List every ad with the summary fields the dashboard grid needs."""
     result = await db.execute(select(Ad).order_by(Ad.title))
     ads = result.scalars().all()
     return [
@@ -27,4 +28,5 @@ async def list_ads(db: AsyncSession = Depends(get_db)) -> list[AdOut]:
 
 @router.get("/{ad_id}", response_model=AdDetail)
 async def get_ad_detail(ad_id: str, db: AsyncSession = Depends(get_db)) -> AdDetail:
+    """Full detail for one ad: totals, per-platform breakdown, and comments."""
     return await ad.get_ad_detail(db, ad_id)

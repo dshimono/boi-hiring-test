@@ -4,6 +4,7 @@ from datetime import date
 def build_system_prompt(
     dataset_start: date | None, dataset_end: date | None, ads: list[dict[str, str]]
 ) -> str:
+    """Ground the system prompt with the real dataset range, ad-id vocabulary, and tool rules."""
     date_range = (
         f"{dataset_start.isoformat()} to {dataset_end.isoformat()}"
         if dataset_start and dataset_end

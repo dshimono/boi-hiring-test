@@ -10,6 +10,7 @@ router = APIRouter(prefix="/metrics", tags=["metrics"], dependencies=[Depends(ge
 
 @router.get("/coverage", response_model=CoverageResponse)
 async def get_coverage(db: AsyncSession = Depends(get_db)) -> CoverageResponse:
+    """Which platforms reported data for each ad, week by week."""
     return await metrics.get_coverage(db)
 
 
@@ -18,4 +19,5 @@ async def get_weekly_summary(
     metric: str = Query("impressions", pattern="^(impressions|clicks|engagements)$"),
     db: AsyncSession = Depends(get_db),
 ) -> WeeklySummaryResponse:
+    """Weekly per-platform totals for one metric (impressions, clicks, or engagements)."""
     return await metrics.get_weekly_summary(db, metric)

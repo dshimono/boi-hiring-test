@@ -1,3 +1,5 @@
+"""Provider-agnostic chat types, plus an OpenAI adapter that implements LLMClient."""
+
 import json
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
@@ -36,6 +38,8 @@ class LLMResponse:
 
 
 class LLMClient(Protocol):
+    """Provider-agnostic chat interface; concrete clients (e.g. OpenAIClient) implement this."""
+
     async def chat(self, messages: list[Message], tools: list[ToolDef]) -> LLMResponse: ...
 
 
@@ -67,6 +71,8 @@ def _to_openai_tool(tool: ToolDef) -> dict[str, Any]:
 
 
 class OpenAIClient:
+    """Adapts the OpenAI chat.completions API to the neutral LLMClient protocol."""
+
     def __init__(self, api_key: str, model: str, max_tokens: int, timeout_s: float) -> None:
         self._client = AsyncOpenAI(api_key=api_key, timeout=timeout_s)
         self._model = model
@@ -97,6 +103,7 @@ class OpenAIClient:
 
 
 def get_llm_client(settings: Settings) -> LLMClient:
+    """Construct the LLMClient for the configured provider; raises on an unknown provider."""
     match settings.llm_provider:
         case "openai":
             return OpenAIClient(

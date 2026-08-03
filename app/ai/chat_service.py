@@ -22,6 +22,10 @@ class ChatService:
         self.llm_client = llm_client or get_llm_client(settings)
 
     async def ask(self, message: str, history: list[Message]) -> str:
+        """Answer one message, letting the model call tools up to MAX_TOOL_ITERATIONS times.
+
+        Falls back to a fixed message if the provider errors or the iteration cap is hit.
+        """
         dataset_start, dataset_end = await get_dataset_date_range(self.session)
         ads = await list_ads(self.session)
         messages = [

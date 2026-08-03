@@ -1,3 +1,5 @@
+"""Aggregates all routers under /api/v1, except health, which is mounted unprefixed."""
+
 from fastapi import APIRouter
 
 from app.api.routes import ads, auth, chat, health, metrics, stats, users

@@ -9,6 +9,8 @@ from app.db.base import Base
 
 
 class Ad(Base):
+    """A single ad creative (title, body, image) tracked across platforms."""
+
     __tablename__ = "ads"
 
     id: Mapped[uuid.UUID] = mapped_column(

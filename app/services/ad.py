@@ -1,3 +1,5 @@
+"""Assembles a single ad's detail view: per-platform metrics, comments, and totals."""
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,10 +9,12 @@ from app.schemas.ad import AdDetail, CommentOut, PlatformMetrics
 
 
 def _percentage(numerator: int, denominator: int) -> float:
+    """Numerator/denominator as a percentage rounded to 2 decimals, or 0.0 if denominator is 0."""
     return round(numerator / denominator * 100, 2) if denominator else 0.0
 
 
 async def get_ad_detail(session: AsyncSession, ad_id: str) -> AdDetail:
+    """Fetch an ad with its per-platform metrics and comments, or raise NotFoundError."""
     ad = await session.scalar(select(Ad).where(Ad.ad_id == ad_id))
     if ad is None:
         raise NotFoundError(f"Ad '{ad_id}' not found")

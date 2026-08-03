@@ -20,6 +20,8 @@ from app.models.enums import AdPlatform, ad_platform_enum
 
 
 class AdMetric(Base):
+    """Daily impressions/clicks/engagements for one ad on one platform."""
+
     __tablename__ = "ad_metrics"
     __table_args__ = (
         UniqueConstraint("date", "ad_id", "platform"),
