@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     email_from: EmailStr = "noreply@example.com"
     frontend_url: str = "http://localhost:3000"
 
+    llm_provider: str = "openai"
+    llm_model: str = "gpt-4o-mini"
+    llm_max_tokens: int = 1000
+    llm_timeout_s: float = 30
+    openai_api_key: str = ""
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors_origins(cls, v: str | list[str]) -> list[str]:
