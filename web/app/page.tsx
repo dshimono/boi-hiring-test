@@ -5,9 +5,10 @@ import ChatBox from "./ChatBox";
 import CoverageHeatmap from "./CoverageHeatmap";
 import Header from "./Header";
 import LineChart from "./LineChart";
+import TopAdsLeaderboard from "./TopAdsLeaderboard";
 import { PLATFORM_COLORS, PLATFORM_ORDER } from "./constants";
 import { formatNumber, formatDate, formatYear } from "./format";
-import type { Ad, AdDetail, Coverage, StatsOverview, WeeklySummary } from "./types";
+import type { Ad, AdDetail, Coverage, RankAdsResponse, StatsOverview, WeeklySummary } from "./types";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +31,12 @@ async function getJSON<T>(path: string, token: string | undefined): Promise<T> {
 export default async function Home() {
   const token = cookies().get("access_token")?.value;
 
-  const [ads, coverage, weeklySummary, stats] = await Promise.all([
+  const [ads, coverage, weeklySummary, stats, topAds] = await Promise.all([
     getJSON<Ad[]>("/api/v1/ads", token),
     getJSON<Coverage>("/api/v1/metrics/coverage", token),
     getJSON<WeeklySummary>("/api/v1/metrics/weekly-summary", token),
     getJSON<StatsOverview>("/api/v1/stats/overview", token),
+    getJSON<RankAdsResponse>("/api/v1/metrics/ranked?top_n=5", token),
   ]);
 
   const adDetails = await Promise.all(
@@ -72,9 +74,19 @@ export default async function Home() {
         </div>
 
         <section className="mt-20">
+          <h2 className="text-xl font-semibold tracking-tight">Top ads by CTR</h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            The highest click-through-rate creatives.
+          </p>
+          <div className="mt-6">
+            <TopAdsLeaderboard ads={topAds.ads} metric={topAds.metric} />
+          </div>
+        </section>
+
+        <section className="mt-20">
           <h2 className="text-xl font-semibold tracking-tight">Chat with your data</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Ask questions about ad performance, grounded in the same data as the charts below.
+            Ask questions about ad performance.
           </p>
           <div className="mt-6">
             <ChatBox />
