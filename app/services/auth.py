@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import structlog
+from fastapi import BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -24,8 +25,8 @@ class AuthService:
         self.magic_links = MagicLinkRepository(session)
         self.email_service = EmailService()
 
-    async def request_magic_link(self, email: str) -> None:
-        """Create the user if needed, issue a token, and email the sign-in link."""
+    async def request_magic_link(self, email: str, background_tasks: BackgroundTasks) -> None:
+        """Create the user if needed, issue a token, and queue the sign-in email."""
         user = await self.users.get_by_email(email)
         if user is None:
             user = await self.users.create(email)
@@ -38,10 +39,15 @@ class AuthService:
         await self.session.commit()
 
         magic_link_url = f"{settings.frontend_url}/auth/verify?token={raw_token}"
+        background_tasks.add_task(self._send_magic_link_email, user.email, magic_link_url)
+
+    async def _send_magic_link_email(self, to: str, magic_link_url: str) -> None:
+        # Runs after the response is sent, once get_db has already closed self.session —
+        # fine since sending email doesn't need the DB.
         try:
-            await self.email_service.send_magic_link(to=user.email, magic_link_url=magic_link_url)
+            await self.email_service.send_magic_link(to=to, magic_link_url=magic_link_url)
         except Exception:
-            logger.exception("magic_link_email_failed", to=user.email)
+            logger.exception("magic_link_email_failed", to=to)
 
     async def verify_magic_link(self, raw_token: str) -> Token:
         """Redeem a magic link token and return a JWT access token."""

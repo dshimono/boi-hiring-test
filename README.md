@@ -17,9 +17,11 @@ Without a `RESEND_API_KEY`, magic links are logged instead of emailed — useful
 
 ### How it works
 
-1. `POST /api/v1/auth/magic-link` — client submits an email. If no user exists for that email, one is created. A single-use token is generated, hashed, stored with a `MAGIC_LINK_EXPIRE_MINUTES`-minute expiry, and emailed as a sign-in link (or logged, if `RESEND_API_KEY` isn't set).
+1. `POST /api/v1/auth/magic-link` — client submits an email. If no user exists for that email, one is created. A single-use token is generated, hashed, stored with a `MAGIC_LINK_EXPIRE_MINUTES`-minute expiry, and the sign-in email is queued via a FastAPI `BackgroundTask` (or logged, if `RESEND_API_KEY` isn't set) so the response doesn't wait on Resend.
 2. `POST /api/v1/auth/verify` — client submits the raw token from the link. If it's valid, unused, and unexpired, the user is marked verified and a JWT access token is returned.
 3. `GET /api/v1/users/me` and the other data routes (`/api/v1/ads`, `/api/v1/metrics/*`, `/api/v1/stats/*`) are protected; they require `Authorization: Bearer <access_token>`.
+
+`BackgroundTask` runs in-process after the response is sent — no extra infrastructure, but a failed send is only logged (not retried) and a crash mid-task drops the email. That's an acceptable trade at current volume; if magic-link email needs retries, delivery guarantees, or to survive a process restart, graduate to a real queue (e.g. Celery/RQ backed by Redis) instead of leaning harder on `BackgroundTask`.
 
 ### Security properties
 

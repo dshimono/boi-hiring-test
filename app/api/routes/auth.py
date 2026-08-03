@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
@@ -10,10 +10,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/magic-link", response_model=MagicLinkRequestResponse)
 async def request_magic_link(
-    payload: MagicLinkRequest, db: AsyncSession = Depends(get_db)
+    payload: MagicLinkRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
 ) -> MagicLinkRequestResponse:
     """Request a sign-in link be emailed to the given address."""
-    await AuthService(db).request_magic_link(payload.email)
+    await AuthService(db).request_magic_link(payload.email, background_tasks)
     return MagicLinkRequestResponse()
 
 
