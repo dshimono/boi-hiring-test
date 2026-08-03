@@ -1,7 +1,7 @@
 "use client";
 
-import { Bot, User } from "lucide-react";
-import { useRef, useState, type FormEvent } from "react";
+import { Bot, RotateCcw, User } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -29,6 +29,12 @@ export default function ChatBox() {
   const [status, setStatus] = useState<"idle" | "loading" | "streaming">("idle");
   const [error, setError] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [turns, status]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -118,11 +124,31 @@ export default function ChatBox() {
     abortRef.current?.abort();
   }
 
+  function handleReset() {
+    abortRef.current?.abort();
+    setTurns([]);
+    setInput("");
+    setError("");
+    setStatus("idle");
+  }
+
   const isBusy = status !== "idle";
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-1)] p-6">
-      <div className="flex max-h-96 flex-col gap-3 overflow-y-auto">
+      {turns.length > 0 ? (
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={handleReset}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-[var(--text-secondary)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+          >
+            <RotateCcw size={13} />
+            Clear chat
+          </button>
+        </div>
+      ) : null}
+      <div ref={scrollRef} className="flex max-h-96 flex-col gap-3 overflow-y-auto">
         {turns.length === 0 ? (
           <p className="text-sm text-[var(--text-secondary)]">
             Ask a question about ads and ads performance, e.g. &ldquo;Which ad had the highest CTR last
