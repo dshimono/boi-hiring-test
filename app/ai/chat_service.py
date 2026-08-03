@@ -1,3 +1,5 @@
+from collections.abc import AsyncGenerator
+
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,10 +23,11 @@ class ChatService:
         self.session = session
         self.llm_client = llm_client or get_llm_client(settings)
 
-    async def ask(self, message: str, history: list[Message]) -> str:
-        """Answer one message, letting the model call tools up to MAX_TOOL_ITERATIONS times.
+    async def ask_stream(self, message: str, history: list[Message]) -> AsyncGenerator[str]:
+        """Stream one message's answer, calling tools up to MAX_TOOL_ITERATIONS times.
 
-        Falls back to a fixed message if the provider errors or the iteration cap is hit.
+        Yields text deltas as they arrive from the provider. Falls back to a fixed
+        message if the provider errors or the iteration cap is hit.
         """
         dataset_start, dataset_end = await get_dataset_date_range(self.session)
         ads = await list_ads(self.session)
@@ -37,15 +40,23 @@ class ChatService:
 
         for _ in range(MAX_TOOL_ITERATIONS):
             try:
-                response = await self.llm_client.chat(messages, tool_defs)
+                response = None
+                async for chunk in self.llm_client.chat_stream(messages, tool_defs):
+                    if chunk.text:
+                        yield chunk.text
+                    if chunk.response is not None:
+                        response = chunk.response
             except Exception as exc:
                 # Log only the exception type, never str(exc)/traceback: provider SDK
                 # error messages can echo back a masked fragment of the API key.
                 logger.error("chat_provider_error", error_type=type(exc).__name__)
-                return PROVIDER_ERROR_MESSAGE
+                yield PROVIDER_ERROR_MESSAGE
+                return
+
+            assert response is not None  # chat_stream always ends with a response chunk
 
             if not response.tool_calls:
-                return response.content or ""
+                return
 
             messages.append(
                 Message(
@@ -57,4 +68,4 @@ class ChatService:
                 messages.append(Message(role="tool", content=result, tool_call_id=tool_call.id))
 
         logger.warning("chat_iteration_cap_reached")
-        return ITERATION_CAP_MESSAGE
+        yield ITERATION_CAP_MESSAGE

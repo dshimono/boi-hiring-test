@@ -1,3 +1,5 @@
+from collections.abc import AsyncGenerator
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
@@ -7,20 +9,30 @@ from app.core.config import settings
 from app.repositories.user import UserRepository
 
 
+def _parse_sse(body: str) -> list[dict]:
+    events = []
+    for line in body.strip().split("\n\n"):
+        assert line.startswith("data: ")
+        events.append(__import__("json").loads(line.removeprefix("data: ")))
+    return events
+
+
 class _FakeChatService:
     def __init__(self, session: AsyncSession) -> None:
         pass
 
-    async def ask(self, message: str, history: list) -> str:
-        return "mocked answer"
+    async def ask_stream(self, message: str, history: list) -> AsyncGenerator[str]:
+        for word in ["mocked ", "answer"]:
+            yield word
 
 
 class _FailingChatService:
     def __init__(self, session: AsyncSession) -> None:
         pass
 
-    async def ask(self, message: str, history: list) -> str:
+    async def ask_stream(self, message: str, history: list) -> AsyncGenerator[str]:
         raise RuntimeError("boom: sensitive provider detail, e.g. an api key")
+        yield  # pragma: no cover - makes this an async generator
 
 
 @pytest_asyncio.fixture
@@ -34,7 +46,7 @@ async def authed_client(
 
 
 @pytest.mark.asyncio
-async def test_chat_route_returns_answer(
+async def test_chat_route_streams_tokens_then_done(
     authed_client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr("app.api.routes.chat.ChatService", _FakeChatService)
@@ -42,7 +54,13 @@ async def test_chat_route_returns_answer(
     response = await authed_client.post("/api/v1/chat", json={"message": "hi", "history": []})
 
     assert response.status_code == 200
-    assert response.json() == {"message": "mocked answer"}
+    assert response.headers["content-type"].startswith("text/event-stream")
+    events = _parse_sse(response.text)
+    assert events == [
+        {"type": "token", "text": "mocked "},
+        {"type": "token", "text": "answer"},
+        {"type": "done"},
+    ]
 
 
 @pytest.mark.asyncio
@@ -69,14 +87,16 @@ async def test_chat_route_rejects_too_much_history(authed_client: AsyncClient) -
 
 
 @pytest.mark.asyncio
-async def test_chat_route_provider_failure_returns_generic_502(
+async def test_chat_route_provider_failure_emits_error_event(
     authed_client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr("app.api.routes.chat.ChatService", _FailingChatService)
 
     response = await authed_client.post("/api/v1/chat", json={"message": "hi", "history": []})
 
-    assert response.status_code == 502
-    detail = response.json()["detail"]
-    assert "boom" not in detail
-    assert "api key" not in detail
+    assert response.status_code == 200
+    events = _parse_sse(response.text)
+    assert len(events) == 1
+    assert events[0]["type"] == "error"
+    assert "boom" not in events[0]["message"]
+    assert "api key" not in events[0]["message"]

@@ -1,6 +1,7 @@
 """Provider-agnostic chat types, plus an OpenAI adapter that implements LLMClient."""
 
 import json
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
@@ -37,10 +38,20 @@ class LLMResponse:
     tool_calls: list[ToolCall]
 
 
+@dataclass
+class StreamChunk:
+    """Either a text delta (`text` set) or the final accumulated response (`response` set)."""
+
+    text: str | None = None
+    response: LLMResponse | None = None
+
+
 class LLMClient(Protocol):
     """Provider-agnostic chat interface; concrete clients (e.g. OpenAIClient) implement this."""
 
-    async def chat(self, messages: list[Message], tools: list[ToolDef]) -> LLMResponse: ...
+    def chat_stream(
+        self, messages: list[Message], tools: list[ToolDef]
+    ) -> AsyncIterator[StreamChunk]: ...
 
 
 def _to_openai_message(message: Message) -> dict[str, Any]:
@@ -78,28 +89,57 @@ class OpenAIClient:
         self._model = model
         self._max_tokens = max_tokens
 
-    async def chat(self, messages: list[Message], tools: list[ToolDef]) -> LLMResponse:
-        """Translate neutral types -> OpenAI chat.completions format and back.
+    async def chat_stream(
+        self, messages: list[Message], tools: list[ToolDef]
+    ) -> AsyncIterator[StreamChunk]:
+        """Translate neutral types -> OpenAI chat.completions format and back, streamed.
 
+        Yields a StreamChunk per content delta, then one final StreamChunk carrying
+        the accumulated LLMResponse (content + tool calls) once the stream ends.
         Provider exceptions (auth, timeout, rate limit, ...) propagate to the
         caller; ChatService is responsible for catching them.
         """
-        response = await self._client.chat.completions.create(
+        stream = await self._client.chat.completions.create(
             model=self._model,
             max_tokens=self._max_tokens,
             messages=[_to_openai_message(m) for m in messages],
             tools=[_to_openai_tool(t) for t in tools] if tools else None,
+            stream=True,
         )
-        choice_message = response.choices[0].message
+
+        content_parts: list[str] = []
+        # Tool-call fragments arrive by index: id/name on the first chunk for
+        # that index, arguments dribble in across subsequent chunks.
+        tool_calls_by_index: dict[int, dict[str, str]] = {}
+
+        async for chunk in stream:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta is None:
+                continue
+            if delta.content:
+                content_parts.append(delta.content)
+                yield StreamChunk(text=delta.content)
+            for tc_delta in delta.tool_calls or []:
+                entry = tool_calls_by_index.setdefault(
+                    tc_delta.index, {"id": "", "name": "", "arguments": ""}
+                )
+                if tc_delta.id:
+                    entry["id"] = tc_delta.id
+                if tc_delta.function and tc_delta.function.name:
+                    entry["name"] = tc_delta.function.name
+                if tc_delta.function and tc_delta.function.arguments:
+                    entry["arguments"] += tc_delta.function.arguments
+
         tool_calls = [
             ToolCall(
-                id=tc.id,
-                name=tc.function.name,
-                arguments=json.loads(tc.function.arguments) if tc.function.arguments else {},
+                id=entry["id"],
+                name=entry["name"],
+                arguments=json.loads(entry["arguments"]) if entry["arguments"] else {},
             )
-            for tc in (choice_message.tool_calls or [])
+            for entry in tool_calls_by_index.values()
         ]
-        return LLMResponse(content=choice_message.content, tool_calls=tool_calls)
+        content = "".join(content_parts) or None
+        yield StreamChunk(response=LLMResponse(content=content, tool_calls=tool_calls))
 
 
 def get_llm_client(settings: Settings) -> LLMClient:
