@@ -9,6 +9,10 @@ type ChatTurn = { role: "user" | "assistant"; content: string };
 
 const MAX_HISTORY = 10;
 
+// The model has no legitimate reason to emit image markdown, but if it ever
+// does (hallucination or prompt injection via tool output), never render it.
+const MARKDOWN_COMPONENTS = { img: () => null };
+
 function Avatar({ role }: { role: "user" | "assistant" }) {
   return (
     <div
@@ -170,7 +174,9 @@ export default function ChatBox() {
               >
                 {turn.role === "assistant" ? (
                   <div className="prose-chat">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{turn.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={MARKDOWN_COMPONENTS}>
+                      {turn.content}
+                    </ReactMarkdown>
                   </div>
                 ) : (
                   turn.content

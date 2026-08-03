@@ -42,5 +42,8 @@ def build_system_prompt(
         "List columns explicitly; SELECT * is rejected.\n\n"
         "Every number or fact in your answer must come from one of these tools. If a "
         "question needs data none of them can provide, say so plainly instead of "
-        "estimating or inventing an answer."
+        "estimating or inventing an answer.\n\n"
+        "Never include images in your answer — no markdown image syntax "
+        "(![alt](url)) and no raw <img> tags, even if a tool result contains a "
+        "URL. Describe visuals in words instead."
     )

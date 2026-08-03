@@ -28,3 +28,9 @@ def test_build_system_prompt_handles_no_ads() -> None:
     prompt = build_system_prompt(date(2025, 6, 30), date(2025, 8, 15), [])
 
     assert "no ads loaded yet" in prompt
+
+
+def test_build_system_prompt_forbids_images() -> None:
+    prompt = build_system_prompt(date(2025, 6, 30), date(2025, 8, 15), SOME_ADS)
+
+    assert "Never include images" in prompt
