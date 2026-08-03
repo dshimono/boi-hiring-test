@@ -6,7 +6,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Ad, AdMetric, AdPlatform
-from app.services.metrics import rank_ads
+from app.services.metrics import get_coverage, get_weekly_summary, rank_ads
 
 DAY_1 = date(2025, 6, 30)
 DAY_2 = date(2025, 7, 7)
@@ -148,3 +148,73 @@ async def test_rank_ads_no_data_returns_none_period(db_session: AsyncSession) ->
     result = await rank_ads(db_session, metric="ctr")
 
     assert result == {"metric": "ctr", "period": None, "ad_id_filter": None, "ads": []}
+
+
+@pytest_asyncio.fixture
+async def multi_platform_seeded(db_session: AsyncSession) -> AsyncSession:
+    """One ad with Google + Meta metrics on DAY_1, Google only on DAY_2."""
+    await _make_ad(db_session, "ad_1", "Ad One")
+    await _make_metric(
+        db_session,
+        "ad_1",
+        DAY_1,
+        impressions=100,
+        clicks=10,
+        engagements=5,
+        platform=AdPlatform.GOOGLE,
+    )
+    await _make_metric(
+        db_session,
+        "ad_1",
+        DAY_1,
+        impressions=200,
+        clicks=20,
+        engagements=10,
+        platform=AdPlatform.META,
+    )
+    await _make_metric(
+        db_session,
+        "ad_1",
+        DAY_2,
+        impressions=50,
+        clicks=5,
+        engagements=2,
+        platform=AdPlatform.GOOGLE,
+    )
+    await db_session.flush()
+    return db_session
+
+
+@pytest.mark.asyncio
+async def test_get_coverage_builds_ad_by_week_platform_grid(
+    multi_platform_seeded: AsyncSession,
+) -> None:
+    result = await get_coverage(multi_platform_seeded)
+
+    assert result.weeks == [DAY_1, DAY_2]
+    assert len(result.ads) == 1
+    ad_coverage = result.ads[0]
+    assert ad_coverage.ad_id == "ad_1"
+    assert ad_coverage.platforms_by_week[0] == ["Google", "Meta"]
+    assert ad_coverage.platforms_by_week[1] == ["Google"]
+
+
+@pytest.mark.asyncio
+async def test_get_coverage_empty_dataset_returns_no_weeks(db_session: AsyncSession) -> None:
+    result = await get_coverage(db_session)
+
+    assert result.weeks == []
+    assert result.ads == []
+
+
+@pytest.mark.asyncio
+async def test_get_weekly_summary_sums_per_platform_per_week(
+    multi_platform_seeded: AsyncSession,
+) -> None:
+    result = await get_weekly_summary(multi_platform_seeded, "impressions")
+
+    assert result.weeks == [DAY_1, DAY_2]
+    assert result.metric == "impressions"
+    assert result.series["Google"] == [100, 50]
+    assert result.series["Meta"] == [200, 0]
+    assert result.series["LinkedIn"] == [0, 0]
