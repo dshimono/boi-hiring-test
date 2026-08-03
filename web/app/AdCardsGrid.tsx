@@ -26,7 +26,7 @@ export default function AdCardsGrid({ ads }: { ads: AdDetail[] }) {
             key={ad.ad_id}
             type="button"
             onClick={() => setOpenId(ad.ad_id)}
-            className="group w-full appearance-none overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-left transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-strong)]"
+            className="group w-full appearance-none overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-1)] text-left transition-all duration-300 ease-out hover:-translate-y-1 hover:border-[var(--border-strong)] hover:shadow-[0_16px_32px_-16px_rgba(0,0,0,0.28)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-strong)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
             <AdThumb ad={ad} />
             <div className="p-4">
@@ -78,7 +78,11 @@ function AdThumb({ ad }: { ad: AdDetail }) {
   return ad.image_url ? (
     <div className="flex aspect-square w-full items-center justify-center bg-[var(--surface-2)]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={ad.image_url} alt={ad.title} className="h-full w-full object-contain" />
+      <img
+        src={ad.image_url}
+        alt={ad.title}
+        className="h-full w-full object-contain transition-transform duration-300 ease-out group-hover:scale-[1.04] motion-reduce:group-hover:scale-100"
+      />
     </div>
   ) : (
     <div className="flex aspect-square w-full items-center justify-center bg-[var(--surface-2)] text-xs text-[var(--text-muted)]">
