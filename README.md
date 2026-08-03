@@ -62,3 +62,26 @@ make test
 ```
 
 Each test runs inside a transaction (or an in-memory SQLite session for `tests/unit`) that's rolled back afterwards, so nothing persists between runs. No test sends real email; tests marked `@pytest.mark.real_email` are skipped unless `RESEND_API_KEY` is set.
+
+## Chat with your data
+
+Ask natural-language questions about ad performance; answers come from a typed tool call (`get_ad_performance`) into the same `services/metrics.rank_ads()` function the dashboard's own metrics use, never from the model's own knowledge. The tool-calling loop (`app/ai/chat_service.py`) sends the system prompt, conversation history, and the user's question to the LLM, executes any tool calls it requests, and feeds the JSON results back until it returns a final answer or a 5-iteration cap is hit. If a question needs data the tool can't provide (e.g. ad comments or creative copy), the model is instructed to say so rather than estimate.
+
+### Provider swap
+
+`app/ai/llm/client.py` is the only file that imports the OpenAI SDK; everything else in `app/ai/` depends only on the neutral `Message`/`ToolCall`/`ToolDef`/`LLMResponse` types and the `LLMClient` protocol. Adding a second provider is one new class in `client.py` plus one `LLM_PROVIDER` env var value — no changes anywhere else.
+
+### Environment variables
+
+| Variable | Default | Notes |
+|---|---|---|
+| `LLM_PROVIDER` | `openai` | Selects the client in `get_llm_client()`; unknown values raise at startup |
+| `LLM_MODEL` | `gpt-4o-mini` | Model name, passed straight through to the provider |
+| `LLM_MAX_TOKENS` | `1000` | Response token cap |
+| `LLM_TIMEOUT_S` | `30` | Provider request timeout, in seconds |
+| `OPENAI_API_KEY` | *(empty)* | Required to actually call the API; the app still boots without it |
+
+### Next features
+
+- `search_comments` over `ad_comments`, via embeddings, once the dataset outgrows prompt-stuffing.
+- A second provider `case` branch in `get_llm_client()` (e.g. Gemini) — no stub exists today by design.
