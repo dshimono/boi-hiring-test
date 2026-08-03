@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -10,6 +11,8 @@ from app.repositories.user import UserRepository
 from app.schemas.auth import Token
 from app.services.email import EmailService
 from app.utils.datetime import utc_now
+
+logger = structlog.get_logger(__name__)
 
 
 class AuthService:
@@ -35,7 +38,10 @@ class AuthService:
         await self.session.commit()
 
         magic_link_url = f"{settings.frontend_url}/auth/verify?token={raw_token}"
-        await self.email_service.send_magic_link(to=user.email, magic_link_url=magic_link_url)
+        try:
+            await self.email_service.send_magic_link(to=user.email, magic_link_url=magic_link_url)
+        except Exception:
+            logger.exception("magic_link_email_failed", to=user.email)
 
     async def verify_magic_link(self, raw_token: str) -> Token:
         """Redeem a magic link token and return a JWT access token."""

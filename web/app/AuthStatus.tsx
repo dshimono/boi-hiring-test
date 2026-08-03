@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 
 const API_URL = process.env.API_URL ?? "http://localhost:8000";
 
-async function getCurrentUserEmail(token: string): Promise<string | null> {
+async function getCurrentUserEmail(token: string | undefined): Promise<string | null> {
   const res = await fetch(`${API_URL}/api/v1/users/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     cache: "no-store",
   });
   if (!res.ok) return null;
@@ -14,7 +14,7 @@ async function getCurrentUserEmail(token: string): Promise<string | null> {
 
 export default async function AuthStatus() {
   const token = cookies().get("access_token")?.value;
-  const email = token ? await getCurrentUserEmail(token) : null;
+  const email = await getCurrentUserEmail(token);
 
   if (!email) {
     return (
