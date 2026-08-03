@@ -28,6 +28,10 @@ jobs:
       - name: Lint backend
         run: make lint-backend
 
+      - name: Typecheck backend (non-blocking baseline)
+        continue-on-error: true
+        run: uv run mypy app
+
   frontend:
     runs-on: ubuntu-latest
     steps:

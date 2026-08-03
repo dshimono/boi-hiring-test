@@ -7,7 +7,7 @@ NEXT_PUBLIC_WEBSITE_URL ?= http://localhost:3000
 NEXT_PUBLIC_API_URL ?= http://localhost:8000
 
 .PHONY: help install install-backend install-frontend \
-	lint lint-backend lint-frontend format typecheck-frontend \
+	lint lint-backend lint-frontend format typecheck typecheck-frontend typecheck-backend \
 	test test-backend migrate migration seed \
 	build build-backend build-frontend \
 	up prod-up down logs ci clean
@@ -35,8 +35,13 @@ lint-frontend: ## Lint frontend with next lint
 format: ## Auto-format backend code with ruff
 	uv run ruff format .
 
+typecheck: typecheck-backend typecheck-frontend ## Typecheck backend + frontend
+
 typecheck-frontend: ## Typecheck frontend with tsc
 	cd $(WEB_DIR) && npx tsc --noEmit
+
+typecheck-backend: ## Typecheck backend with mypy (loose baseline, non-blocking)
+	uv run mypy app || true
 
 test: test-backend ## Run tests (frontend has no test framework configured yet)
 
@@ -74,7 +79,7 @@ down: ## Stop the stack
 logs: ## Tail logs from the stack
 	docker compose logs -f
 
-ci: install lint typecheck-frontend test build ## Run the full check suite locally, same as CI
+ci: install lint typecheck test build ## Run the full check suite locally, same as CI
 
 clean: ## Remove caches and build artifacts
 	rm -rf .pytest_cache .ruff_cache .coverage $(WEB_DIR)/.next
