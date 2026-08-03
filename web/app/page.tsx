@@ -76,7 +76,7 @@ export default async function Home() {
         <section className="mt-20">
           <h2 className="text-xl font-semibold tracking-tight">Chat with your data</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Ask questions about ads and ads performance.
+            Ask questions about your ads and their performance.
           </p>
           <div className="mt-6">
             <ChatBox />
