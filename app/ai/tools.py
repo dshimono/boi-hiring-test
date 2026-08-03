@@ -6,9 +6,18 @@ from typing import Any, Literal
 
 import structlog
 from pydantic import BaseModel, Field, ValidationError
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.client import ToolDef
+from app.ai.sql_guard import (
+    MAX_ROWS,
+    READONLY_ROLE,
+    STATEMENT_TIMEOUT_S,
+    apply_row_cap,
+    scrub_uuids,
+    validate_select_only,
+)
 from app.services import metrics
 
 logger = structlog.get_logger(__name__)
@@ -45,6 +54,54 @@ async def get_ad_performance(session: AsyncSession, args: AdPerformanceArgs) -> 
     return await metrics.rank_ads(session, **args.model_dump())
 
 
+class SqlQueryArgs(BaseModel):
+    query: str = Field(
+        max_length=4000,
+        description=(
+            "A single read-only PostgreSQL SELECT statement. Queryable tables: "
+            "ads(ad_id, title, body, image, path, created_at, updated_at), "
+            "ad_comments(date, ad_id, platform, comment, created_at), "
+            "ad_metrics(date, ad_id, platform, impressions, clicks, engagements, "
+            "created_at). platform is one of 'Google', 'Meta', 'LinkedIn'. No other "
+            "tables exist. The 'id' column is never queryable on any table. "
+            "List columns explicitly — SELECT * is not allowed."
+        ),
+    )
+
+
+async def run_sql_query(session: AsyncSession, args: SqlQueryArgs) -> dict:
+    """Validate and run an ad-hoc read-only query for questions get_ad_performance
+    can't answer (e.g. ad comments). Defense in depth: validate_select_only checks
+    a parsed AST (statement shape, table/column allowlist), then the query still
+    runs under a Postgres role that can only SELECT the three ads tables, inside a
+    read-only transaction, so a gap in the app-level check can't become a real
+    leak or write. See app/ai/sql_guard.py."""
+    try:
+        parsed = validate_select_only(args.query)
+    except ValueError as e:
+        return {"error": str(e)}
+
+    capped_sql = apply_row_cap(parsed).sql(dialect="postgres")
+    nested = await session.begin_nested()
+    try:
+        await session.execute(text(f"SET LOCAL ROLE {READONLY_ROLE}"))
+        await session.execute(text("SET TRANSACTION READ ONLY"))
+        await session.execute(text(f"SET LOCAL statement_timeout = '{STATEMENT_TIMEOUT_S}s'"))
+        result = await session.execute(text(capped_sql))
+        rows = [dict(row) for row in result.mappings().all()]
+    finally:
+        # Always roll back, even on success: a savepoint *release* would let the
+        # SET LOCAL role/timeout leak into the rest of this shared, request-scoped
+        # session for later tool calls in the same chat turn. Rolling back also
+        # keeps a rejected/erroring query from poisoning the session for the next
+        # tool call in the loop.
+        await nested.rollback()
+
+    rows = scrub_uuids(rows)
+    logger.info("sql_tool_query_executed", sql=capped_sql, row_count=len(rows))
+    return {"rows": rows, "row_count": len(rows), "truncated": len(rows) >= MAX_ROWS}
+
+
 TOOLS: list[Tool] = [
     Tool(
         name="get_ad_performance",
@@ -54,6 +111,17 @@ TOOLS: list[Tool] = [
         ),
         args_model=AdPerformanceArgs,
         fn=get_ad_performance,
+    ),
+    Tool(
+        name="run_sql_query",
+        description=(
+            "Run a read-only SQL SELECT against the ads/ad_comments/ad_metrics tables. "
+            "Use for questions get_ad_performance can't answer, e.g. ad comment content, "
+            "counts, or platform breakdowns. Results are capped at "
+            f"{MAX_ROWS} rows."
+        ),
+        args_model=SqlQueryArgs,
+        fn=run_sql_query,
     ),
 ]
 
