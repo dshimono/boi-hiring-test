@@ -5,7 +5,7 @@ from app.ai.llm.client import LLMClient, Message, get_llm_client
 from app.ai.prompts import build_system_prompt
 from app.ai.tools import TOOLS, execute
 from app.core.config import settings
-from app.services.metrics import get_dataset_date_range
+from app.services.metrics import get_dataset_date_range, list_ads
 
 logger = structlog.get_logger(__name__)
 
@@ -23,8 +23,9 @@ class ChatService:
 
     async def ask(self, message: str, history: list[Message]) -> str:
         dataset_start, dataset_end = await get_dataset_date_range(self.session)
+        ads = await list_ads(self.session)
         messages = [
-            Message(role="system", content=build_system_prompt(dataset_start, dataset_end)),
+            Message(role="system", content=build_system_prompt(dataset_start, dataset_end, ads)),
             *history,
             Message(role="user", content=message),
         ]

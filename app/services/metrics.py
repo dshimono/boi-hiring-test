@@ -31,6 +31,13 @@ async def get_dataset_date_range(
     return result.one()
 
 
+async def list_ads(session: AsyncSession) -> list[dict[str, str]]:
+    """Every ad's id and title, so a caller can map a human-readable name to the
+    exact id rank_ads() expects."""
+    result = await session.execute(select(Ad.ad_id, Ad.title).order_by(Ad.title))
+    return [{"ad_id": ad_id, "title": title} for ad_id, title in result.all()]
+
+
 async def rank_ads(
     session: AsyncSession,
     metric: Metric = "ctr",

@@ -2,15 +2,29 @@ from datetime import date
 
 from app.ai.prompts import build_system_prompt
 
+SOME_ADS = [{"ad_id": "chaos_to_clarity", "title": "Chaos to Clarity"}]
+
 
 def test_build_system_prompt_includes_resolved_date_range() -> None:
-    prompt = build_system_prompt(date(2025, 6, 30), date(2025, 8, 15))
+    prompt = build_system_prompt(date(2025, 6, 30), date(2025, 8, 15), SOME_ADS)
 
     assert "2025-06-30 to 2025-08-15" in prompt
     assert "get_ad_performance" in prompt
 
 
 def test_build_system_prompt_handles_no_data() -> None:
-    prompt = build_system_prompt(None, None)
+    prompt = build_system_prompt(None, None, [])
 
     assert "no data loaded yet" in prompt
+
+
+def test_build_system_prompt_lists_ad_ids_and_titles() -> None:
+    prompt = build_system_prompt(date(2025, 6, 30), date(2025, 8, 15), SOME_ADS)
+
+    assert "chaos_to_clarity: Chaos to Clarity" in prompt
+
+
+def test_build_system_prompt_handles_no_ads() -> None:
+    prompt = build_system_prompt(date(2025, 6, 30), date(2025, 8, 15), [])
+
+    assert "no ads loaded yet" in prompt
