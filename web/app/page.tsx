@@ -74,22 +74,22 @@ export default async function Home() {
         </div>
 
         <section className="mt-20">
-          <h2 className="text-xl font-semibold tracking-tight">Top ads by CTR</h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            The highest click-through-rate creatives.
-          </p>
-          <div className="mt-6">
-            <TopAdsLeaderboard ads={topAds.ads} metric={topAds.metric} />
-          </div>
-        </section>
-
-        <section className="mt-20">
           <h2 className="text-xl font-semibold tracking-tight">Chat with your data</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
             Ask questions about ads and ads performance.
           </p>
           <div className="mt-6">
             <ChatBox />
+          </div>
+        </section>
+
+        <section className="mt-20">
+          <h2 className="text-xl font-semibold tracking-tight">Top ads by CTR</h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            The highest click-through-rate creatives.
+          </p>
+          <div className="mt-6">
+            <TopAdsLeaderboard ads={topAds.ads} metric={topAds.metric} />
           </div>
         </section>
 

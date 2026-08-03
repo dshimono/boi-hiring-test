@@ -13,7 +13,9 @@ function Avatar({ role }: { role: "user" | "assistant" }) {
   return (
     <div
       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-        role === "user" ? "bg-blue-600 text-white" : "bg-[var(--surface-2)] text-[var(--text-secondary)]"
+        role === "user"
+          ? "bg-[var(--series-google)] text-white"
+          : "bg-[var(--surface-2)] text-[var(--text-secondary)]"
       }`}
     >
       {role === "user" ? <User size={16} /> : <Bot size={16} />}
@@ -136,7 +138,7 @@ export default function ChatBox() {
               <div
                 className={`max-w-[80%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
                   turn.role === "user"
-                    ? "bg-[var(--text-primary)] text-[var(--surface-page)]"
+                    ? "bg-[var(--chat-user-bg)] text-[var(--chat-user-text)]"
                     : "bg-[var(--surface-2)]"
                 }`}
               >

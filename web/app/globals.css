@@ -16,6 +16,8 @@
   --series-google: #2a78d6;
   --series-linkedin: #eb6834;
   --series-meta: #1baf7a;
+  --chat-user-bg: rgba(42, 120, 214, 0.12);
+  --chat-user-text: #103f6e;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,6 +35,8 @@
     --series-google: #3987e5;
     --series-linkedin: #d95926;
     --series-meta: #199e70;
+    --chat-user-bg: rgba(57, 135, 229, 0.2);
+    --chat-user-text: #dbeafe;
   }
 }
 
