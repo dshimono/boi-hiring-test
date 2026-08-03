@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import AdCardsGrid from "./AdCardsGrid";
+import ChatBox from "./ChatBox";
 import Header from "./Header";
 import LineChart from "./LineChart";
 import { PLATFORM_COLORS, PLATFORM_ORDER } from "./constants";
@@ -68,6 +69,16 @@ export default async function Home() {
           <StatTile label="Metric rows" value={stats.metric_rows_count} />
           <StatTile label="Comments" value={stats.comments_count} />
         </div>
+
+        <section className="mt-20">
+          <h2 className="text-xl font-semibold tracking-tight">Chat with your data</h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            Ask questions about ad performance, grounded in the same data as the charts below.
+          </p>
+          <div className="mt-6">
+            <ChatBox />
+          </div>
+        </section>
 
         <section className="mt-20">
           <h2 className="text-xl font-semibold tracking-tight">Weekly impressions by platform</h2>
