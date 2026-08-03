@@ -123,7 +123,7 @@ export default function ChatBox() {
       <div className="flex max-h-96 flex-col gap-3 overflow-y-auto">
         {turns.length === 0 ? (
           <p className="text-sm text-[var(--text-secondary)]">
-            Ask a question about ad performance, e.g. &ldquo;Which ad had the highest CTR last
+            Ask a question about ads and ads performance, e.g. &ldquo;Which ad had the highest CTR last
             month?&rdquo;
           </p>
         ) : (
@@ -168,7 +168,7 @@ export default function ChatBox() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about ad performance…"
+          placeholder="Dig deeper into the data…"
           maxLength={1000}
           disabled={isBusy}
           className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none transition focus:border-[var(--border-strong)] disabled:opacity-50"

@@ -39,7 +39,7 @@ async def _event_stream(
 
 @router.post("")
 async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)) -> StreamingResponse:
-    """Ask a question about ad performance, grounded in tool calls against the real data.
+    """Ask a question about ads and ads performance, grounded in tool calls against the real data.
 
     Streams the answer as Server-Sent Events: `token` deltas, then `done`, or
     `error` if the provider/tooling fails partway through.
