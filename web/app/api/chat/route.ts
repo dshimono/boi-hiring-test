@@ -17,11 +17,19 @@ export async function POST(request: NextRequest) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: await request.text(),
+    signal: request.signal,
   });
 
-  const body = await upstream.text();
-  return new NextResponse(body, {
+  if (!upstream.ok) {
+    const body = await upstream.text();
+    return new NextResponse(body, {
+      status: upstream.status,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  return new NextResponse(upstream.body, {
     status: upstream.status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
   });
 }
