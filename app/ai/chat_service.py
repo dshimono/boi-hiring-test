@@ -34,8 +34,10 @@ class ChatService:
         for _ in range(MAX_TOOL_ITERATIONS):
             try:
                 response = await self.llm_client.chat(messages, tool_defs)
-            except Exception:
-                logger.exception("chat_provider_error")
+            except Exception as exc:
+                # Log only the exception type, never str(exc)/traceback: provider SDK
+                # error messages can echo back a masked fragment of the API key.
+                logger.error("chat_provider_error", error_type=type(exc).__name__)
                 return PROVIDER_ERROR_MESSAGE
 
             if not response.tool_calls:
