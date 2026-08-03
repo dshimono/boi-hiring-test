@@ -51,7 +51,7 @@ jobs:
       - name: Typecheck frontend
         run: make typecheck-frontend
 
-  test:
+  backend:
     runs-on: ubuntu-latest
 
     services:
