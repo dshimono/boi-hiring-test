@@ -18,6 +18,8 @@ from app.ai.sql_guard import (
     scrub_uuids,
     validate_select_only,
 )
+from app.core.exceptions import NotFoundError
+from app.services import ad as ad_service
 from app.services import metrics
 
 logger = structlog.get_logger(__name__)
@@ -59,7 +61,8 @@ class SqlQueryArgs(BaseModel):
         max_length=4000,
         description=(
             "A single read-only PostgreSQL SELECT statement. Queryable tables: "
-            "ads(ad_id, title, body, image, path, created_at, updated_at), "
+            "ads(ad_id, title, body, image, path, ocr_headline, ocr_body, ocr_cta, "
+            "vision_description, created_at, updated_at), "
             "ad_comments(date, ad_id, platform, comment, created_at), "
             "ad_metrics(date, ad_id, platform, impressions, clicks, engagements, "
             "created_at). platform is one of 'Google', 'Meta', 'LinkedIn'. No other "
@@ -102,6 +105,19 @@ async def run_sql_query(session: AsyncSession, args: SqlQueryArgs) -> dict:
     return {"rows": rows, "row_count": len(rows), "truncated": len(rows) >= MAX_ROWS}
 
 
+class AdDetailsArgs(BaseModel):
+    ad_id: str = Field(description="The ad's id, from the ad list in the system prompt.")
+
+
+async def get_ad_details(session: AsyncSession, args: AdDetailsArgs) -> dict:
+    """Full detail for one ad: creative text/visual description plus performance and comments."""
+    try:
+        detail = await ad_service.get_ad_detail(session, args.ad_id)
+    except NotFoundError as e:
+        return {"error": str(e)}
+    return detail.model_dump()
+
+
 TOOLS: list[Tool] = [
     Tool(
         name="get_ad_performance",
@@ -122,6 +138,17 @@ TOOLS: list[Tool] = [
         ),
         args_model=SqlQueryArgs,
         fn=run_sql_query,
+    ),
+    Tool(
+        name="get_ad_details",
+        description=(
+            "Full detail for one specific ad: its creative text (headline, body, CTA as they "
+            "appear on the image), a visual description of the creative, plus performance "
+            "totals, per-platform breakdown, and comments. Use this for questions about what "
+            "a specific ad says or looks like, or for the full picture of one ad."
+        ),
+        args_model=AdDetailsArgs,
+        fn=get_ad_details,
     ),
 ]
 

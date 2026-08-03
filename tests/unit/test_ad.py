@@ -150,3 +150,28 @@ async def test_get_ad_detail_no_image_when_path_missing(db_session: AsyncSession
     detail = await get_ad_detail(db_session, "ad_1")
 
     assert detail.image_url is None
+
+
+@pytest.mark.asyncio
+async def test_get_ad_detail_includes_creative_text_fields(db_session: AsyncSession) -> None:
+    db_session.add(
+        Ad(
+            id=uuid.uuid4(),
+            ad_id="ad_1",
+            title="Ad One",
+            ocr_headline="Headline",
+            ocr_body="Body copy",
+            ocr_cta="Learn more",
+            vision_description="A description.",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+    )
+    await db_session.flush()
+
+    detail = await get_ad_detail(db_session, "ad_1")
+
+    assert detail.ocr_headline == "Headline"
+    assert detail.ocr_body == "Body copy"
+    assert detail.ocr_cta == "Learn more"
+    assert detail.vision_description == "A description."

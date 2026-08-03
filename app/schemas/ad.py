@@ -29,6 +29,10 @@ class AdDetail(BaseModel):
     title: str
     body: str | None
     image_url: str | None
+    ocr_headline: str | None
+    ocr_body: str | None
+    ocr_cta: str | None
+    vision_description: str | None
     impressions: int
     clicks: int
     engagements: int
