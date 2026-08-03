@@ -153,12 +153,7 @@ export default function ChatBox() {
         </div>
       ) : null}
       <div ref={scrollRef} className="flex max-h-96 flex-col gap-3 overflow-y-auto">
-        {turns.length === 0 ? (
-          <p className="text-sm text-[var(--text-secondary)]">
-            Ask a question about ads and ads performance, e.g. &ldquo;Which ad had the highest CTR last
-            month?&rdquo;
-          </p>
-        ) : (
+        {turns.length > 0 &&
           turns.map((turn, i) => (
             <div
               key={i}
@@ -183,8 +178,7 @@ export default function ChatBox() {
                 )}
               </div>
             </div>
-          ))
-        )}
+          ))}
         {status === "loading" ? (
           <div className="flex items-end gap-2 self-start">
             <Avatar role="assistant" />
