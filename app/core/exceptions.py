@@ -49,6 +49,11 @@ class NotAuthenticatedError(AppError):
         super().__init__(message, status_code=401)
 
 
+class ChatUnavailableError(AppError):
+    def __init__(self, message: str = "Chat is temporarily unavailable. Please try again later."):
+        super().__init__(message, status_code=502)
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
