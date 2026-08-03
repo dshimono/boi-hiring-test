@@ -67,6 +67,8 @@ Each test runs inside a transaction (or an in-memory SQLite session for `tests/u
 
 Ask natural-language questions about ad performance; answers come from a typed tool call (`get_ad_performance`) into the same `services/metrics.rank_ads()` function the dashboard's own metrics use, never from the model's own knowledge. The tool-calling loop (`app/ai/chat_service.py`) sends the system prompt, conversation history, and the user's question to the LLM, executes any tool calls it requests, and feeds the JSON results back until it returns a final answer or a 5-iteration cap is hit. If a question needs data the tool can't provide (e.g. ad comments or creative copy), the model is instructed to say so rather than estimate.
 
+**Demo question:** *"Which ad has the best engagement rate, and how many times higher is that than the ad with the worst engagement rate?"* — grounds an actual insight ("Dynamic Synthetic Personas" at ~3.2% is ~3.7x "From Chaos to Clarity" at ~0.85%) and shows the model reasoning over a full ranked tool result rather than a single lookup.
+
 ### Provider swap
 
 `app/ai/llm/client.py` is the only file that imports the OpenAI SDK; everything else in `app/ai/` depends only on the neutral `Message`/`ToolCall`/`ToolDef`/`LLMResponse` types and the `LLMClient` protocol. Adding a second provider is one new class in `client.py` plus one `LLM_PROVIDER` env var value — no changes anywhere else.
