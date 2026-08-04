@@ -23,6 +23,8 @@ async def get_current_user(
 ) -> User:
     """FastAPI dependency: resolve the caller's User from a Bearer JWT."""
     if not settings.auth_enabled:
+        # Settings' own validator guarantees this is set whenever auth is disabled.
+        assert settings.auth_bypass_user_id is not None
         return await UserService(db).get_by_id(settings.auth_bypass_user_id)
 
     if credentials is None:

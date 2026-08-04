@@ -33,7 +33,7 @@ def _database_revision_heads(connection) -> tuple[list[str], list[str]]:
     migration_context = MigrationContext.configure(connection=connection)
     current_heads = migration_context.get_current_heads()
     script_heads = ScriptDirectory.from_config(alembic_config).get_heads()
-    return current_heads, script_heads
+    return list(current_heads), script_heads
 
 
 def _run_alembic_upgrade() -> None:

@@ -38,7 +38,7 @@ _UUID_RE = re.compile(
 )
 
 
-def validate_select_only(sql: str) -> exp.Expression:
+def validate_select_only(sql: str) -> exp.Query:
     """Parse `sql` and reject anything but a single safe SELECT against the
     allowed ads tables. Raises ValueError with a specific, LLM-readable
     reason on rejection so the model can self-correct."""
@@ -90,7 +90,7 @@ def _check_functions(parsed: exp.Expression) -> None:
             raise ValueError(f"function '{fn.name}' is not allowed")
 
 
-def apply_row_cap(parsed: exp.Expression, max_rows: int = MAX_ROWS) -> exp.Expression:
+def apply_row_cap(parsed: exp.Query, max_rows: int = MAX_ROWS) -> exp.Query:
     """Cap the query's LIMIT at max_rows, leaving a smaller explicit LIMIT as-is."""
     existing = parsed.args.get("limit")
     if existing is not None:

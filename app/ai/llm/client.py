@@ -3,9 +3,10 @@
 import json
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, omit
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
 
 
 @dataclass
@@ -44,7 +45,7 @@ class StreamChunk:
     response: LLMResponse | None = None
 
 
-def _to_openai_message(message: Message) -> dict[str, Any]:
+def _to_openai_message(message: Message) -> ChatCompletionMessageParam:
     payload: dict[str, Any] = {"role": message.role, "content": message.content}
     if message.tool_call_id is not None:
         payload["tool_call_id"] = message.tool_call_id
@@ -57,10 +58,10 @@ def _to_openai_message(message: Message) -> dict[str, Any]:
             }
             for tc in message.tool_calls
         ]
-    return payload
+    return cast(ChatCompletionMessageParam, payload)
 
 
-def _to_openai_tool(tool: ToolDef) -> dict[str, Any]:
+def _to_openai_tool(tool: ToolDef) -> ChatCompletionToolParam:
     return {
         "type": "function",
         "function": {
@@ -93,7 +94,7 @@ class OpenAIClient:
             model=self._model,
             max_tokens=self._max_tokens,
             messages=[_to_openai_message(m) for m in messages],
-            tools=[_to_openai_tool(t) for t in tools] if tools else None,
+            tools=[_to_openai_tool(t) for t in tools] if tools else omit,
             stream=True,
         )
 

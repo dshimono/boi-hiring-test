@@ -31,7 +31,11 @@ class Tool:
     name: str
     description: str
     args_model: type[BaseModel]
-    fn: Callable[[AsyncSession, BaseModel], Awaitable[Any]]
+    # Each fn actually takes its own args_model subclass, not BaseModel itself —
+    # Callable is contravariant in its parameters, so a precise type here would
+    # reject every concrete tool function. execute() is what ties fn to the
+    # matching args_model at runtime.
+    fn: Callable[[AsyncSession, Any], Awaitable[Any]]
 
     def definition(self) -> ToolDef:
         return ToolDef(

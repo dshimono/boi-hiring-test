@@ -2,9 +2,9 @@
 
 from collections.abc import Callable
 from datetime import date as date_type
-from typing import Literal
+from typing import Any, Literal
 
-from sqlalchemy import case, func, select
+from sqlalchemy import ColumnElement, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.selectable import Subquery
 
@@ -19,7 +19,7 @@ _METRIC_COLUMNS = {
     "engagements": AdMetric.engagements,
 }
 
-_METRIC_EXPRESSIONS: dict[Metric, Callable[[Subquery], object]] = {
+_METRIC_EXPRESSIONS: dict[Metric, Callable[[Subquery], ColumnElement[Any]]] = {
     "ctr": lambda totals: case(
         (totals.c.impressions > 0, totals.c.clicks * 100.0 / totals.c.impressions), else_=0.0
     ),
@@ -37,7 +37,7 @@ async def get_dataset_date_range(
 ) -> tuple[date_type | None, date_type | None]:
     """The earliest and latest dates with any recorded metrics, or (None, None) if empty."""
     result = await session.execute(select(func.min(AdMetric.date), func.max(AdMetric.date)))
-    return result.one()
+    return result.one().tuple()
 
 
 async def list_ads(session: AsyncSession) -> list[dict[str, str]]:

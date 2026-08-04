@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user, get_db
 from app.schemas.metrics import CoverageResponse, RankAdsResponse, WeeklySummaryResponse
 from app.services import metrics
+from app.services.metrics import Metric
 
 router = APIRouter(prefix="/metrics", tags=["metrics"], dependencies=[Depends(get_current_user)])
 
@@ -27,7 +28,7 @@ async def get_weekly_summary(
 
 @router.get("/ranked", response_model=RankAdsResponse)
 async def get_ranked_ads(
-    metric: str = Query("ctr", pattern="^(ctr|engagement_rate|impressions|clicks|engagements)$"),
+    metric: Metric = Query("ctr"),
     ad_id: str | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
@@ -36,6 +37,7 @@ async def get_ranked_ads(
 ) -> RankAdsResponse:
     """Ads ranked by a metric over a date range, optionally filtered to one ad —
     the same query the chat tool uses, so dashboard and chat rankings always agree."""
-    return await metrics.rank_ads(
+    result = await metrics.rank_ads(
         db, metric=metric, ad_id=ad_id, start_date=start_date, end_date=end_date, top_n=top_n
     )
+    return RankAdsResponse(**result)
