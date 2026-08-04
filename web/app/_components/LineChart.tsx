@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type KeyboardEvent, type PointerEvent } from "react";
-import { PLATFORM_COLORS, PLATFORM_ORDER } from "./constants";
-import { formatCompact, formatDate } from "./format";
+import { PLATFORM_COLORS, PLATFORM_ORDER } from "../constants";
+import { formatCompact, formatDate } from "../format";
 
 function niceMax(value: number): number {
   if (value <= 0) return 1;

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PLATFORM_COLORS } from "./constants";
-import { formatDate, formatNumber } from "./format";
-import type { AdDetail } from "./types";
+import { PLATFORM_COLORS } from "../constants";
+import { formatDate, formatNumber } from "../format";
+import type { AdDetail } from "../types";
 
 export default function AdCardsGrid({ ads }: { ads: AdDetail[] }) {
   const [openId, setOpenId] = useState<string | null>(null);

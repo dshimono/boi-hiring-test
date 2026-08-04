@@ -1,5 +1,5 @@
-import { formatNumber } from "./format";
-import type { RankedAd } from "./types";
+import { formatNumber } from "../format";
+import type { RankedAd } from "../types";
 
 function formatMetricValue(metric: string, value: number): string {
   if (metric === "ctr" || metric === "engagement_rate") return `${value}%`;

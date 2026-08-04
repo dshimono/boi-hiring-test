@@ -1,11 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import AdCardsGrid from "./AdCardsGrid";
-import ChatBox from "./ChatBox";
-import CoverageHeatmap from "./CoverageHeatmap";
-import Header from "./Header";
-import LineChart from "./LineChart";
-import TopAdsLeaderboard from "./TopAdsLeaderboard";
+import AdCardsGrid from "./_components/AdCardsGrid";
+import ChatBox from "./_components/ChatBox";
+import CoverageHeatmap from "./_components/CoverageHeatmap";
+import Header from "./_components/Header";
+import LineChart from "./_components/LineChart";
+import TopAdsLeaderboard from "./_components/TopAdsLeaderboard";
 import { PLATFORM_COLORS, PLATFORM_ORDER } from "./constants";
 import { formatNumber, formatDate, formatYear } from "./format";
 import type { Ad, AdDetail, Coverage, RankAdsResponse, StatsOverview, WeeklySummary } from "./types";

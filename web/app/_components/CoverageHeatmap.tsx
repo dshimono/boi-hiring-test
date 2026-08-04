@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useState, type MouseEvent } from "react";
-import { PLATFORM_COLORS } from "./constants";
-import { formatDate } from "./format";
-import type { Coverage } from "./types";
+import { PLATFORM_COLORS } from "../constants";
+import { formatDate } from "../format";
+import type { Coverage } from "../types";
 
 type Hover = {
   adIndex: number;
