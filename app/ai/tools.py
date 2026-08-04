@@ -7,6 +7,7 @@ from typing import Any, Literal
 import structlog
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.llm.client import ToolDef
@@ -92,6 +93,14 @@ async def run_sql_query(session: AsyncSession, args: SqlQueryArgs) -> dict:
         await session.execute(text(f"SET LOCAL statement_timeout = '{STATEMENT_TIMEOUT_S}s'"))
         result = await session.execute(text(capped_sql))
         rows = [dict(row) for row in result.mappings().all()]
+    except DBAPIError as e:
+        # The query passed AST validation but Postgres itself rejected it (bad
+        # column/table reference, type mismatch, etc). Surface the driver's
+        # message — not the generic catch-all in execute() — so the model can
+        # see what was actually wrong and self-correct on the next iteration.
+        reason = str(getattr(e, "orig", e))
+        logger.info("SQL tool query rejected by database.", sql=capped_sql, error=reason)
+        return {"error": reason}
     finally:
         # Always roll back, even on success: a savepoint *release* would let the
         # SET LOCAL role/timeout leak into the rest of this shared, request-scoped
