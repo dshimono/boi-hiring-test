@@ -48,10 +48,13 @@ def configure_logging() -> None:
 
     # uvicorn ships its own handlers/formatters; strip them so every log line
     # (app, sqlalchemy, alembic, uvicorn) flows through the single formatter above.
+    # Routine INFO chatter (startup/shutdown) duplicates what app.main's lifespan
+    # already logs, so only let uvicorn's own warnings/errors through.
     for name in _UVICORN_LOGGERS:
         uvicorn_logger = logging.getLogger(name)
         uvicorn_logger.handlers = []
         uvicorn_logger.propagate = True
+        uvicorn_logger.setLevel(logging.WARNING)
 
     # Access logs are emitted by our own request-logging middleware instead,
     # with structured fields (method, path, status_code, duration_ms).

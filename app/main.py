@@ -32,6 +32,10 @@ async def seed_if_empty() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup: migrate, provision pgvector, seed if empty. Shutdown: dispose the engine."""
+    # uvicorn re-applies its own default logging config (re-adding uvicorn.access's
+    # handler) after create_app() has already run, so re-silence it here to avoid
+    # duplicate request logs (ours from middleware + uvicorn's own access line).
+    configure_logging()
     logger.info("Starting application.", environment=settings.environment)
     await check_migrations()
     async with engine.begin() as conn:
