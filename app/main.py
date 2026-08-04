@@ -25,21 +25,21 @@ async def seed_if_empty() -> None:
         existing = await session.scalar(select(func.count()).select_from(Ad))
     if existing:
         return
-    logger.info("database_empty_seeding")
+    logger.info("Ads table is empty; seeding from source data.")
     await seed(force=False)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup: migrate, provision pgvector, seed if empty. Shutdown: dispose the engine."""
-    logger.info("application_starting", environment=settings.environment)
+    logger.info("Starting application.", environment=settings.environment)
     await check_migrations()
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     await seed_if_empty()
-    logger.info("application_started")
+    logger.info("Application startup complete.")
     yield
-    logger.info("application_stopping")
+    logger.info("Shutting down application.")
     await engine.dispose()
 
 

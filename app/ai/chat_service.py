@@ -49,7 +49,7 @@ class ChatService:
             except Exception as exc:
                 # Log only the exception type, never str(exc)/traceback: provider SDK
                 # error messages can echo back a masked fragment of the API key.
-                logger.error("chat_provider_error", error_type=type(exc).__name__)
+                logger.error("Chat provider request failed.", error_type=type(exc).__name__)
                 yield PROVIDER_ERROR_MESSAGE
                 return
 
@@ -67,5 +67,5 @@ class ChatService:
                 result = await execute(self.session, tool_call.name, tool_call.arguments)
                 messages.append(Message(role="tool", content=result, tool_call_id=tool_call.id))
 
-        logger.warning("chat_iteration_cap_reached")
+        logger.warning("Chat tool-calling loop hit the iteration cap.")
         yield ITERATION_CAP_MESSAGE

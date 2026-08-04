@@ -47,7 +47,7 @@ class AuthService:
         try:
             await self.email_service.send_magic_link(to=to, magic_link_url=magic_link_url)
         except Exception:
-            logger.exception("magic_link_email_failed", to=to)
+            logger.exception("Failed to send magic-link email.", to=to)
 
     async def verify_magic_link(self, raw_token: str) -> Token:
         """Redeem a magic link token and return a JWT access token."""

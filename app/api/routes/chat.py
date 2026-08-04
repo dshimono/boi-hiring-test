@@ -31,7 +31,7 @@ async def _event_stream(
     except Exception:
         # Streaming has already started (status 200 sent), so a failure can only
         # be surfaced as an event, never as an HTTP status.
-        logger.exception("chat_route_failed")
+        logger.exception("Chat route failed while streaming a response.")
         yield _sse({"type": "error", "message": CHAT_UNAVAILABLE_MESSAGE})
         return
     yield _sse({"type": "done"})

@@ -30,12 +30,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
         except Exception:
             duration_ms = round((time.perf_counter() - start) * 1000, 2)
-            logger.exception("request_failed", duration_ms=duration_ms)
+            logger.exception("Request failed with an unhandled exception.", duration_ms=duration_ms)
             raise
 
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
         logger.info(
-            "request_finished",
+            "Request finished.",
             status_code=response.status_code,
             duration_ms=duration_ms,
         )

@@ -101,7 +101,7 @@ async def run_sql_query(session: AsyncSession, args: SqlQueryArgs) -> dict:
         await nested.rollback()
 
     rows = scrub_uuids(rows)
-    logger.info("sql_tool_query_executed", sql=capped_sql, row_count=len(rows))
+    logger.info("Executed ad-hoc SQL tool query.", sql=capped_sql, row_count=len(rows))
     return {"rows": rows, "row_count": len(rows), "truncated": len(rows) >= MAX_ROWS}
 
 
@@ -169,5 +169,5 @@ async def execute(session: AsyncSession, name: str, raw_args: dict) -> str:
     except ValidationError as e:
         return json.dumps({"error": e.errors()}, default=str)
     except Exception:
-        logger.exception("tool_execution_failed", tool=name)
+        logger.exception("Tool execution failed.", tool=name)
         return json.dumps({"error": "tool execution failed"})

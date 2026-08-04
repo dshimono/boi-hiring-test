@@ -19,8 +19,7 @@ class EmailService:
         """Email the sign-in link, or log it if no RESEND_API_KEY is configured."""
         if not settings.resend_api_key:
             logger.info(
-                "magic_link_email_skipped",
-                reason="RESEND_API_KEY not set",
+                "Skipped sending magic-link email: RESEND_API_KEY not set.",
                 to=to,
                 magic_link_url=magic_link_url,
             )
