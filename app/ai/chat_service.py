@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.llm.client import LLMClient, Message, get_llm_client
+from app.ai.llm.client import Message, OpenAIClient
 from app.ai.prompts import build_system_prompt
 from app.ai.tools import TOOLS, execute
 from app.core.config import settings
@@ -19,9 +19,14 @@ PROVIDER_ERROR_MESSAGE = "Sorry, I couldn't reach the AI assistant right now. Pl
 class ChatService:
     """Runs the tool-calling loop for one chat turn against a real LLM provider."""
 
-    def __init__(self, session: AsyncSession, llm_client: LLMClient | None = None) -> None:
+    def __init__(self, session: AsyncSession, llm_client: OpenAIClient | None = None) -> None:
         self.session = session
-        self.llm_client = llm_client or get_llm_client(settings)
+        self.llm_client = llm_client or OpenAIClient(
+            settings.openai_api_key,
+            settings.llm_model,
+            settings.llm_max_tokens,
+            settings.llm_timeout_s,
+        )
 
     async def ask_stream(self, message: str, history: list[Message]) -> AsyncGenerator[str]:
         """Stream one message's answer, calling tools up to MAX_TOOL_ITERATIONS times.

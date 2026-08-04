@@ -1,13 +1,11 @@
-"""Provider-agnostic chat types, plus an OpenAI adapter that implements LLMClient."""
+"""Chat types shared across the tool-calling loop, plus the OpenAI client that speaks them."""
 
 import json
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol
+from typing import Any, Literal
 
 from openai import AsyncOpenAI
-
-from app.core.config import Settings
 
 
 @dataclass
@@ -46,14 +44,6 @@ class StreamChunk:
     response: LLMResponse | None = None
 
 
-class LLMClient(Protocol):
-    """Provider-agnostic chat interface; concrete clients (e.g. OpenAIClient) implement this."""
-
-    def chat_stream(
-        self, messages: list[Message], tools: list[ToolDef]
-    ) -> AsyncIterator[StreamChunk]: ...
-
-
 def _to_openai_message(message: Message) -> dict[str, Any]:
     payload: dict[str, Any] = {"role": message.role, "content": message.content}
     if message.tool_call_id is not None:
@@ -82,7 +72,7 @@ def _to_openai_tool(tool: ToolDef) -> dict[str, Any]:
 
 
 class OpenAIClient:
-    """Adapts the OpenAI chat.completions API to the neutral LLMClient protocol."""
+    """Adapts the OpenAI chat.completions API to the shared Message/ToolDef types."""
 
     def __init__(self, api_key: str, model: str, max_tokens: int, timeout_s: float) -> None:
         self._client = AsyncOpenAI(api_key=api_key, timeout=timeout_s)
@@ -140,17 +130,3 @@ class OpenAIClient:
         ]
         content = "".join(content_parts) or None
         yield StreamChunk(response=LLMResponse(content=content, tool_calls=tool_calls))
-
-
-def get_llm_client(settings: Settings) -> LLMClient:
-    """Construct the LLMClient for the configured provider; raises on an unknown provider."""
-    match settings.llm_provider:
-        case "openai":
-            return OpenAIClient(
-                settings.openai_api_key,
-                settings.llm_model,
-                settings.llm_max_tokens,
-                settings.llm_timeout_s,
-            )
-        case _:
-            raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
