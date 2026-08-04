@@ -1,5 +1,4 @@
 import uuid
-from functools import lru_cache
 from typing import Annotated
 
 from pydantic import EmailStr, field_validator, model_validator
@@ -61,10 +60,4 @@ class Settings(BaseSettings):
         return self
 
 
-@lru_cache
-def get_settings() -> Settings:
-    """Build the Settings singleton once and cache it for the process lifetime."""
-    return Settings()
-
-
-settings = get_settings()
+settings = Settings()
