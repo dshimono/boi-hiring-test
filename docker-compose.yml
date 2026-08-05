@@ -22,11 +22,12 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-db}
       SECRET_KEY: ${SECRET_KEY}
-      AUTH_ENABLED: ${AUTH_ENABLED}
-      AUTH_BYPASS_USER_ID: ${AUTH_BYPASS_USER_ID:-}
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      AUTH_BYPASS_USER_ID: ${AUTH_BYPASS_USER_ID:-019fc320-ff07-7de1-8dc2-7a66689cc8c5}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:

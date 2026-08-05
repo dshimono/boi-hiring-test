@@ -46,7 +46,7 @@ typecheck-backend: ## Typecheck backend with mypy (loose baseline, non-blocking)
 test: test-backend ## Run tests (frontend has no test framework configured yet)
 
 test-backend: migrate ## Run backend tests with coverage
-	uv run pytest --cov=app --cov-report=term-missing
+	AUTH_ENABLED=true uv run pytest --cov=app --cov-report=term-missing
 
 migrate: ## Apply database migrations
 	uv run alembic upgrade head

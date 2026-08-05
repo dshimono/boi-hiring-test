@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, RotateCcw, User } from "lucide-react";
+import { ArrowUp, Bot, RotateCcw, Square, User } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -205,17 +205,21 @@ export default function ChatBox() {
           <button
             type="button"
             onClick={handleStop}
-            className="rounded-lg border border-[var(--border)] px-4 py-2.5 text-sm font-medium transition hover:bg-[var(--surface-2)]"
+            aria-label="Stop generating"
+            title="Stop generating"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border)] transition hover:bg-[var(--surface-2)]"
           >
-            Stop
+            <Square size={15} className="fill-current" />
           </button>
         ) : (
           <button
             type="submit"
             disabled={!input.trim()}
-            className="rounded-lg bg-[var(--text-primary)] px-4 py-2.5 text-sm font-medium text-[var(--surface-page)] transition hover:opacity-90 disabled:opacity-50"
+            aria-label="Send message"
+            title="Send message"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--surface-page)] transition hover:opacity-90 disabled:opacity-40"
           >
-            Ask
+            <ArrowUp size={18} />
           </button>
         )}
       </form>

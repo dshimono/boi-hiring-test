@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.exceptions import NotAuthenticatedError
+from app.core.exceptions import NotAuthenticatedError, UserNotFoundError
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
@@ -39,4 +39,10 @@ async def get_current_user(
     if user_id is None:
         raise NotAuthenticatedError()
 
-    return await UserService(db).get_by_id(uuid.UUID(user_id))
+    try:
+        return await UserService(db).get_by_id(uuid.UUID(user_id))
+    except UserNotFoundError as exc:
+        # The token is validly signed but its user no longer exists (e.g. a
+        # stale cookie surviving a database reset) — that's an auth failure,
+        # not a 404, so the frontend's 401 handling can redirect to sign-in.
+        raise NotAuthenticatedError() from exc
