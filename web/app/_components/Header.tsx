@@ -1,4 +1,5 @@
 import AuthStatus from "./AuthStatus";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   return (
@@ -10,7 +11,10 @@ export default function Header() {
         >
           Board of Innovation
         </a>
-        <AuthStatus />
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <AuthStatus />
+        </div>
       </div>
     </header>
   );
