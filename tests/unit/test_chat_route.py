@@ -1,4 +1,6 @@
+import json
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
 import pytest_asyncio
@@ -9,11 +11,11 @@ from app.core.config import settings
 from app.repositories.user import UserRepository
 
 
-def _parse_sse(body: str) -> list[dict]:
+def _parse_sse(body: str) -> list[dict[str, Any]]:
     events = []
     for line in body.strip().split("\n\n"):
         assert line.startswith("data: ")
-        events.append(__import__("json").loads(line.removeprefix("data: ")))
+        events.append(json.loads(line.removeprefix("data: ")))
     return events
 
 

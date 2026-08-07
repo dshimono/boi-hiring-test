@@ -9,6 +9,7 @@ as a backstop if this validation ever has a gap.
 """
 
 import re
+from typing import Any
 
 import sqlglot
 from sqlglot import exp
@@ -102,20 +103,16 @@ def apply_row_cap(parsed: exp.Query, max_rows: int = MAX_ROWS) -> exp.Query:
     return parsed.limit(max_rows)
 
 
-def scrub_uuids(rows: list[dict]) -> list[dict]:
+def scrub_uuids(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Drop the 'id' column and redact any UUID-shaped value, so a row's
     primary key can never reach the model — whether by column name (aliasing
     can't dodge this, we drop the *source* column during validation) or by
     value hiding in a cast/expression under a different key."""
-    scrubbed = []
-    for row in rows:
-        clean = {}
-        for key, value in row.items():
-            if key.lower() == "id":
-                continue
-            if isinstance(value, str) and _UUID_RE.search(value):
-                clean[key] = "[redacted]"
-            else:
-                clean[key] = value
-        scrubbed.append(clean)
-    return scrubbed
+    return [
+        {
+            key: "[redacted]" if isinstance(value, str) and _UUID_RE.search(value) else value
+            for key, value in row.items()
+            if key.lower() != "id"
+        }
+        for row in rows
+    ]

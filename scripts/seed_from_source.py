@@ -37,29 +37,30 @@ def slugify(value: str) -> str:
     return value.strip("-")
 
 
-def load_ads() -> list[dict]:
-    with (SOURCE_DIR / "ad_set.csv").open(newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f, delimiter=";"))
+def _load_csv_rows(filename: str, *, delimiter: str = ",") -> list[dict[str, str]]:
+    with (SOURCE_DIR / filename).open(newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f, delimiter=delimiter))
 
 
-def load_creative_text() -> dict[str, dict]:
+def load_ads() -> list[dict[str, str]]:
+    return _load_csv_rows("ad_set.csv", delimiter=";")
+
+
+def load_creative_text() -> dict[str, dict[str, str]]:
     """Text extracted from the ad images (OCR + vision description), keyed by ad_id.
 
     Generated once by scripts/extract_creative_text.py and committed, so seeding
     needs no OCR tooling or API key.
     """
-    with (SOURCE_DIR / "creative_text.csv").open(newline="", encoding="utf-8") as f:
-        return {row["ad_id"]: row for row in csv.DictReader(f)}
+    return {row["ad_id"]: row for row in _load_csv_rows("creative_text.csv")}
 
 
-def load_comments() -> list[dict]:
-    with (SOURCE_DIR / "comments.csv").open(newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+def load_comments() -> list[dict[str, str]]:
+    return _load_csv_rows("comments.csv")
 
 
-def load_metrics() -> list[dict]:
-    with (SOURCE_DIR / "metrics.csv").open(newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+def load_metrics() -> list[dict[str, str]]:
+    return _load_csv_rows("metrics.csv")
 
 
 def copy_ad_image(ad_id: uuid.UUID, title: str, source_filename: str) -> str:
